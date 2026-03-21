@@ -119,23 +119,56 @@ git reset --mixed origin/main
 
 This squashes all commits on the branch into a single set of unstaged changes, giving you a clean diff of everything that was added or modified.
 
-## Step 2: Annotate each changed file
+## Step 2: Collect changed files
 
-For every file that appears in `git diff --cached --name-only`, **skipping test files** (`*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or any file under a `__tests__/` or `test/` directory):
+Run:
+```bash
+git diff --name-only origin/main
+```
 
-1. Read the file's full staged diff (`git diff --cached -- <file>`).
-2. Identify each **logical block of changes** — a new function, a modified conditional, a new variable or constant, a class/method change, a new import group, etc.
-3. Immediately above each such block, insert a comment in the file's native comment syntax that explains:
-   - **What** this block does (in plain language)
-   - **Why** it was added or changed (infer from context, surrounding code, and the shape of the change)
+Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
 
-Keep the comments concise but complete — one to four lines is ideal. A reviewer should be able to skim down the file and understand every change without reading the code in depth.
+## Step 3: Spawn a sub-agent per logical block
 
-## Step 3: Verify
+For each non-test file, read its full diff:
+```bash
+git diff origin/main -- <file>
+```
 
-Run `git diff --cached` and confirm every meaningful change has an annotation above it. If any logical block is missing a comment, add one.
+Identify the **logical blocks of changes** in that diff — a new function, a modified conditional, a new variable or constant, a class/method change, a new import group, etc.
 
-Do not commit. Leave the annotations as staged changes so the author can review and amend before pushing.
+For **each logical block**, spawn a sub-agent with this prompt:
+
+> You are inserting a code annotation comment into `<FILE_PATH>`.
+>
+> Here is the diff of the logical block you are annotating:
+> ```
+> <BLOCK_DIFF>
+> ```
+>
+> Here is the full current file content for context:
+> ```
+> <FILE_CONTENT>
+> ```
+>
+> Task: Immediately above the changed code in the file, insert a comment using the file's native comment syntax. The comment should explain in 1–4 lines:
+> - **What** this block does (plain language)
+> - **Why** it was added or changed (infer from the diff shape and surrounding code)
+>
+> Edit the file directly. Do not summarize or explain — just insert the comment and save the file.
+
+Run all sub-agents for a given file **sequentially** (one block at a time) to avoid concurrent write conflicts on the same file. Sub-agents across **different files** can run in parallel.
+
+## Step 4: Verify
+
+After all sub-agents complete, run:
+```bash
+git diff origin/main
+```
+
+Confirm every meaningful change has an annotation above it. If any logical block is missing a comment, add one inline.
+
+Do not commit. Leave the annotations as local changes so the author can review and amend before pushing.
 
 --- END ANNOTATION PROMPT ---
 
