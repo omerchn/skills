@@ -81,7 +81,23 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The issue ID from step 3
    - `repositories`: Use the matched repo ID with branch - the PRs branch from remote origin. If it's `core` repo - then use the `core-worktrees` repo.
-   - `prompt`: `/review <PR_URL>` — where `<PR_URL>` is the full GitHub PR URL (e.g., `https://github.com/OWNER/REPO/pull/NUMBER`). If the user provided just a PR number, construct the full URL from the resolved `OWNER/REPO` and PR number. ALWAYS DO `/review`, NEVER `/code-review`. Even if you think the skill does not exist.
+   - `prompt`: Build the prompt using the template below. Replace all `<PLACEHOLDERS>` with actual values. If the Jira ticket was successfully fetched, fill in the Jira section; otherwise use `"N/A"` for those fields.
+
+--- BEGIN REVIEW PROMPT ---
+
+/review <PR_URL>
+
+## Jira Ticket Context
+
+- **Ticket:** <JIRA_TICKET_KEY or "N/A">
+- **Title:** <JIRA_TICKET_TITLE or "N/A">
+- **Status:** <JIRA_STATUS or "N/A">
+- **Description:** <JIRA_DESCRIPTION_FIRST_500_CHARS or "N/A">
+- **Acceptance Criteria:** <JIRA_ACCEPTANCE_CRITERIA or "N/A">
+
+--- END REVIEW PROMPT ---
+
+The `/review` command must always be the **first line** of the prompt. ALWAYS use `/review`, NEVER `/code-review`.
 
 6. **Start a second annotation workspace** using `mcp__vibe_kanban__start_workspace`:
    - `name`: `"PR Annotation #<PR_NUMBER>"`
