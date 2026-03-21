@@ -123,10 +123,10 @@ This squashes all commits on the branch into a single set of unstaged changes, g
 
 Run:
 ```bash
-git diff --name-only --diff-filter=ACM origin/main
+git ls-files --modified --others --exclude-standard
 ```
 
-This captures added (`A`), copied (`C`), and modified (`M`) files. Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
+This captures modified tracked files and untracked added files (after the `git reset --mixed origin/main` from Step 1, newly added files appear as untracked). Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
 
 ## Step 3: Spawn a sub-agent per logical block
 
