@@ -109,7 +109,7 @@ This squashes all commits on the branch into a single set of unstaged changes, g
 
 ## Step 2: Annotate each changed file
 
-For every file that appears in `git diff --cached --name-only`:
+For every file that appears in `git diff --cached --name-only`, **skipping test files** (`*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or any file under a `__tests__/` or `test/` directory):
 
 1. Read the file's full staged diff (`git diff --cached -- <file>`).
 2. Identify each **logical block of changes** — a new function, a modified conditional, a new variable or constant, a class/method change, a new import group, etc.
