@@ -119,18 +119,18 @@ git reset --mixed origin/main
 
 This squashes all commits on the branch into a single set of unstaged changes, giving you a clean diff of everything that was added or modified.
 
-## Step 2: Collect changed files
+## Step 2: Collect changed and added files
 
 Run:
 ```bash
-git diff --name-only origin/main
+git diff --name-only --diff-filter=ACM origin/main
 ```
 
-Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
+This captures added (`A`), copied (`C`), and modified (`M`) files. Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
 
 ## Step 3: Spawn a sub-agent per logical block
 
-For each non-test file, read its full diff:
+For each non-test file (whether newly added or modified), read its full diff:
 ```bash
 git diff origin/main -- <file>
 ```
