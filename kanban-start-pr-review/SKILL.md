@@ -84,7 +84,7 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
    - `name`: `"PR Review #<PR_NUMBER>"`
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The issue ID from step 3
-   - `repositories`: Use the matched repo ID with branch `"origin/main"`. If it's `core` - then use `core-worktrees` repo.
+   - `repositories`: Use the matched repo ID with branch - the PRs branch from remote origin. If it's `core` repo - then use the `core-worktrees` repo.
    - `prompt`: `/review <PR_URL>` — where `<PR_URL>` is the full GitHub PR URL (e.g., `https://github.com/OWNER/REPO/pull/NUMBER`). If the user provided just a PR number, construct the full URL from the resolved `OWNER/REPO` and PR number. ALWAYS DO `/review`, NEVER `/code-review`. Even if you think the skill does not exist.
 
 Present a summary to the user:
