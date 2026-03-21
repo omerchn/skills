@@ -102,10 +102,10 @@ You are annotating the changes in PR #<PR_NUMBER> (<OWNER/REPO>) so a human revi
 
 ```bash
 git fetch origin
-git reset --soft origin/main
+git reset --mixed origin/main
 ```
 
-This squashes all commits on the branch into a single set of staged changes, giving you a clean diff of everything that was added or modified.
+This squashes all commits on the branch into a single set of unstaged changes, giving you a clean diff of everything that was added or modified.
 
 ## Step 2: Annotate each changed file
 
