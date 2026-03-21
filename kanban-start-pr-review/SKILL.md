@@ -30,18 +30,14 @@ Extract the **title**, **author login**, **head branch**, **base branch**, **bod
 
 ### 2. Add Yourself as Reviewer & React to PR
 
-Add yourself as a reviewer on the PR and react with the eyes emoji on the PR description to signal you're looking at it.
+React with the eyes emoji on the PR description to signal you're looking at it.
 
 First, resolve your GitHub username:
 ```bash
 gh api user -q .login
 ```
 
-Then add yourself as a reviewer using the resolved username:
-```bash
-gh pr edit <PR_NUMBER> --repo <GITHUB_REPO> --add-reviewer <YOUR_USERNAME>
-```
-
+Second, add the eyes reaction.
 ```bash
 gh api repos/<OWNER>/<REPO>/issues/<PR_NUMBER>/reactions -f content=eyes
 ```
