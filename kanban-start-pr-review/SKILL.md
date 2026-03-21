@@ -80,14 +80,54 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
    - `project_id`: Use the project ID from step 2
    - `priority`: `"medium"`
 4. **List repos** using `mcp__vibe_kanban__list_repos` to find the matching repo ID. Match the repo name from the GitHub `OWNER/REPO` against the available Vibe Kanban repos (case-insensitive). If no match is found, pick the closest match or use "core" as default.
-5. **Start a workspace** using `mcp__vibe_kanban__start_workspace`:
+5. **Start the review workspace** using `mcp__vibe_kanban__start_workspace`:
    - `name`: `"PR Review #<PR_NUMBER>"`
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The issue ID from step 3
    - `repositories`: Use the matched repo ID with branch - the PRs branch from remote origin. If it's `core` repo - then use the `core-worktrees` repo.
    - `prompt`: `/review <PR_URL>` — where `<PR_URL>` is the full GitHub PR URL (e.g., `https://github.com/OWNER/REPO/pull/NUMBER`). If the user provided just a PR number, construct the full URL from the resolved `OWNER/REPO` and PR number. ALWAYS DO `/review`, NEVER `/code-review`. Even if you think the skill does not exist.
 
+6. **Start a second annotation workspace** using `mcp__vibe_kanban__start_workspace`:
+   - `name`: `"PR Annotation #<PR_NUMBER>"`
+   - `executor`: `"CLAUDE_CODE"`
+   - `issue_id`: The issue ID from step 3
+   - `repositories`: Same repo ID as above, same PR branch from remote origin (same `core-worktrees` rule applies).
+   - `prompt`: The exact text below, with `<PR_NUMBER>` and `<OWNER/REPO>` replaced:
+
+--- BEGIN ANNOTATION PROMPT ---
+
+You are annotating the changes in PR #<PR_NUMBER> (<OWNER/REPO>) so a human reviewer can understand each change at a glance — without needing to compare before/after files.
+
+## Step 1: Collapse branch commits into staged changes
+
+```bash
+git fetch origin
+git reset --soft origin/main
+```
+
+This squashes all commits on the branch into a single set of staged changes, giving you a clean diff of everything that was added or modified.
+
+## Step 2: Annotate each changed file
+
+For every file that appears in `git diff --cached --name-only`:
+
+1. Read the file's full staged diff (`git diff --cached -- <file>`).
+2. Identify each **logical block of changes** — a new function, a modified conditional, a new variable or constant, a class/method change, a new import group, etc.
+3. Immediately above each such block, insert a comment in the file's native comment syntax that explains:
+   - **What** this block does (in plain language)
+   - **Why** it was added or changed (infer from context, surrounding code, and the shape of the change)
+
+Keep the comments concise but complete — one to four lines is ideal. A reviewer should be able to skim down the file and understand every change without reading the code in depth.
+
+## Step 3: Verify
+
+Run `git diff --cached` and confirm every meaningful change has an annotation above it. If any logical block is missing a comment, add one.
+
+Do not commit. Leave the annotations as staged changes so the author can review and amend before pushing.
+
+--- END ANNOTATION PROMPT ---
+
 Present a summary to the user:
 - Kanban issue title and ID
-- Workspace name and status
-- Let them know the review is running in the workspace
+- Both workspace names and statuses
+- Let them know the review is running in the first workspace and the annotation is running in the second
