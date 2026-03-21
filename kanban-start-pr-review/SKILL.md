@@ -1,0 +1,93 @@
+---
+name: kanban-start-pr-review
+description: Use when asked to review a PR, start a PR review, or kick off a code review for a pull request. Fetches PR details, resolves Jira ticket from branch name, creates a Vibe Kanban issue and workspace to run the review in.
+user_invocable: true
+allowed-tools: Bash(gh *), Bash(git *), mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, Read, Glob, Grep
+---
+
+# Assisted PR Review
+
+Gather PR context, resolve the Jira ticket, create a Vibe Kanban issue, and start a workspace that will perform the full review.
+
+## Steps
+
+### 1. Get PR Details
+
+The user provides a PR number or URL. Extract the PR number and determine the GitHub repo (`OWNER/REPO`).
+
+- If the user provides a **full GitHub URL**, extract `OWNER/REPO` from it.
+- If the user provides **just a PR number**, detect the current repo:
+  ```bash
+  gh repo view --json nameWithOwner -q .nameWithOwner
+  ```
+
+Fetch PR details:
+```bash
+gh pr view <PR_NUMBER> --repo <GITHUB_REPO> --json title,author,headRefName,baseRefName,body,files
+```
+
+Extract the **title**, **author login**, **head branch**, **base branch**, **body/description**, and **list of changed files** (with additions/deletions per file).
+
+### 2. Add Yourself as Reviewer & React to PR
+
+Add yourself as a reviewer on the PR and react with the eyes emoji on the PR description to signal you're looking at it.
+
+First, resolve your GitHub username:
+```bash
+gh api user -q .login
+```
+
+Then add yourself as a reviewer using the resolved username:
+```bash
+gh pr edit <PR_NUMBER> --repo <GITHUB_REPO> --add-reviewer <YOUR_USERNAME>
+```
+
+```bash
+gh api repos/<OWNER>/<REPO>/issues/<PR_NUMBER>/reactions -f content=eyes
+```
+
+### 3. Resolve Jira Ticket from Branch Name
+
+Extract the Jira ticket key from the branch name prefix. The pattern is typically `<PROJECT>-<NUMBER>` at the start of the branch name (e.g., `CORE-1234-add-feature` → ticket is `CORE-1234`).
+
+Use the regex pattern: first match of `[A-Z]+-\d+` in the branch name.
+
+If a ticket key is found, fetch the Jira issue using `mcp__claude_ai_Atlassian__getJiraIssue` (you may need to call `mcp__claude_ai_Atlassian__getAccessibleAtlassianResources` first to get the cloud ID).
+
+Collect the **Jira Ticket Summary**:
+- Ticket key and title
+- Status
+- Description (first 500 chars)
+- Acceptance criteria if present
+
+If no ticket key can be extracted from the branch name, note this and move on.
+
+### 4. Create Vibe Kanban Issue & Start Workspace
+
+Create a Vibe Kanban issue to track this PR review, then start a workspace that will perform the entire review.
+
+1. **List organizations** using `mcp__vibe_kanban__list_organizations` to get the org ID.
+2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID.
+3. **Create an issue** using `mcp__vibe_kanban__create_issue`:
+   - `title`: `"PR Review: <PR_TITLE> (#<PR_NUMBER>)"`
+   - `description`: Include the PR URL, author, branch, and Jira ticket key (if found). Example:
+     ```
+     Review PR #<NUMBER> by <AUTHOR>
+     Branch: <HEAD_BRANCH> → <BASE_BRANCH>
+     Repo: <OWNER/REPO>
+     Jira: <TICKET_KEY or "N/A">
+     ```
+   - `project_id`: Use the project ID from step 2
+   - `priority`: `"medium"`
+4. **List repos** using `mcp__vibe_kanban__list_repos` to find the matching repo ID. Match the repo name from the GitHub `OWNER/REPO` against the available Vibe Kanban repos (case-insensitive). If no match is found, pick the closest match or use "core" as default.
+5. **Start a workspace** using `mcp__vibe_kanban__start_workspace`:
+   - `name`: `"PR Review #<PR_NUMBER>"`
+   - `executor`: `"CLAUDE_CODE"`
+   - `issue_id`: The issue ID from step 3
+   - `repositories`: Use the matched repo ID with branch `"origin/main"`. If it's `core` - then use `core-worktrees` repo.
+   - `prompt`: `/review <PR_URL>` — where `<PR_URL>` is the full GitHub PR URL (e.g., `https://github.com/OWNER/REPO/pull/NUMBER`). If the user provided just a PR number, construct the full URL from the resolved `OWNER/REPO` and PR number. ALWAYS DO `/review`, NEVER `/code-review`. Even if you think the skill does not exist.
+
+Present a summary to the user:
+- Kanban issue title and ID
+- Workspace name and status
+- Let them know the review is running in the workspace
