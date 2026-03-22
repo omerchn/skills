@@ -48,7 +48,7 @@ Collect:
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The issue ID from step 2
    - `variant`: `"PLAN"`
-   - `repositories`: Use the matched repo ID with branch `"main"`
+   - `repositories`: Use the matched repo ID with branch - the PRs branch from remote origin. If it's `core` repo - then use the `core-worktrees` repo.
    - `prompt`: `"Plan the following task: <REWRITTEN_TASK_DESCRIPTION>"` — Rewrite the Jira issue description into a clear, well-structured task brief for the planning agent. Clean up Jira formatting artifacts, consolidate scattered details, and present the task as a coherent description with clear requirements. Include acceptance criteria if present. Do NOT include the full Jira template — just a clean, readable task description that a planner can act on.
 
 Present a summary to the user:
