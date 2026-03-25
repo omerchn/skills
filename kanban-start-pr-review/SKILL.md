@@ -108,67 +108,57 @@ The `/review` command must always be the **first line** of the prompt. ALWAYS us
 
 --- BEGIN ANNOTATION PROMPT ---
 
-You are annotating the changes in PR #<PR_NUMBER> (<OWNER/REPO>) so a human reviewer can understand each change at a glance — without needing to compare before/after files.
+You are explaining the changes in PR #<PR_NUMBER> (<OWNER/REPO>) so a human reviewer can understand **why** each change was made — without needing to read the full files.
 
-## Step 1: Collapse branch commits into staged changes
+**Important:** Do NOT modify any files, do NOT run `git reset`, do NOT insert comments into source code. Your only output is text explaining the diffs.
+
+## Step 1: Get the diff
 
 ```bash
 git fetch origin
-git reset --mixed origin/main
+git diff origin/main...HEAD -- . ':!*.spec.*' ':!*.test.*' ':!*.e2e-spec.*' ':!**/__tests__/**' ':!**/test/**'
 ```
 
-This squashes all commits on the branch into a single set of unstaged changes, giving you a clean diff of everything that was added or modified.
+This gives you the full diff of non-test files changed in this PR.
 
-## Step 2: Collect changed and added files
+## Step 2: Collect changed file list
 
-Run:
 ```bash
-git ls-files --modified --others --exclude-standard
+git diff --name-only origin/main...HEAD -- . ':!*.spec.*' ':!*.test.*' ':!*.e2e-spec.*' ':!**/__tests__/**' ':!**/test/**'
 ```
 
-This captures modified tracked files and untracked added files (after the `git reset --mixed origin/main` from Step 1, newly added files appear as untracked). Filter out test files — skip anything matching `*.spec.*`, `*.test.*`, `*.e2e-spec.*`, or under a `__tests__/` or `test/` directory.
+## Step 3: Analyze and explain each logical block
 
-## Step 3: Spawn a sub-agent per logical block
+For each changed file, read the diff and the surrounding source code for context. Break the diff into **logical blocks** — a new function, a modified conditional, a new constant, a class/method change, an import group, etc.
 
-For each non-test file (whether newly added or modified), read its full diff:
-```bash
-git diff origin/main -- <file>
+For each logical block, output:
+
+1. **The diff** — show the relevant hunk (fenced in a code block with the file's language for syntax highlighting)
+2. **Why** — explain in 1–3 sentences the motivation behind this change. Infer from the diff shape, surrounding code, PR description, and Jira context. Focus on intent and reasoning, not a description of what the code literally does.
+
+### Output format
+
+Present your analysis grouped by file, like this:
+
+```
+### `path/to/file.ts`
+
+\`\`\`diff
+<hunk>
+\`\`\`
+**Why:** <1–3 sentence explanation of motivation/intent>
+
+\`\`\`diff
+<hunk>
+\`\`\`
+**Why:** <1–3 sentence explanation of motivation/intent>
 ```
 
-Identify the **logical blocks of changes** in that diff — a new function, a modified conditional, a new variable or constant, a class/method change, a new import group, etc.
+Skip trivial changes (whitespace-only, auto-generated imports with no semantic meaning). If a file is entirely new, present key sections rather than every line.
 
-For **each logical block**, spawn a sub-agent with this prompt:
+## Step 4: Summary
 
-> You are inserting a code annotation comment into `<FILE_PATH>`.
->
-> Here is the diff of the logical block you are annotating:
-> ```
-> <BLOCK_DIFF>
-> ```
->
-> Here is the full current file content for context:
-> ```
-> <FILE_CONTENT>
-> ```
->
-> Task: Immediately above the changed code in the file, insert a comment using the file's native comment syntax. The comment should explain in 1–4 lines:
-> - **What** this block does (plain language)
-> - **Why** it was added or changed (infer from the diff shape and surrounding code)
->
-> Edit the file directly. Do not summarize or explain — just insert the comment and save the file.
-
-Run all sub-agents for a given file **sequentially** (one block at a time) to avoid concurrent write conflicts on the same file. Sub-agents across **different files** can run in parallel.
-
-## Step 4: Verify
-
-After all sub-agents complete, run:
-```bash
-git diff origin/main
-```
-
-Confirm every meaningful change has an annotation above it. If any logical block is missing a comment, add one inline.
-
-Do not commit. Leave the annotations as local changes so the author can review and amend before pushing.
+After all files are covered, add a brief **TL;DR** section (3–5 bullets) summarizing the overall intent of the PR at a high level.
 
 --- END ANNOTATION PROMPT ---
 
