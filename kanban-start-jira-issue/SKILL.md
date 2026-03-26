@@ -2,7 +2,7 @@
 name: kanban-start-jira-issue
 description: Use when asked to start work on a Jira issue, create a Kanban issue from Jira, or plan a Jira ticket implementation. Takes a Jira issue URL, fetches details, creates a Vibe Kanban issue, and starts a Plan workspace.
 user_invocable: true
-allowed-tools: mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations
+allowed-tools: mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations
 ---
 
 # Start Jira Issue in Vibe Kanban
