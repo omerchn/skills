@@ -1,19 +1,20 @@
 ---
-name: prd-to-issues
-description: Break a PRD into independently-grabbable GitHub issues using tracer-bullet vertical slices. Use when user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
+name: kanban-prd-to-issues
+description: Break a PRD into independently-grabbable Vibe Kanban issues using tracer-bullet vertical slices. Use when user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
+allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_issues, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__create_issue_relationship, Read, Glob, Grep
 ---
 
 # PRD to Issues
 
-Break a PRD into independently-grabbable GitHub issues using vertical slices (tracer bullets).
+Break a PRD into independently-grabbable Vibe Kanban issues using vertical slices (tracer bullets).
 
 ## Process
 
 ### 1. Locate the PRD
 
-Ask the user for the PRD GitHub issue number (or URL).
+Ask the user for the PRD — either a Vibe Kanban issue ID/title, or paste the PRD text directly.
 
-If the PRD is not already in your context window, fetch it with `gh issue view <number>` (with comments).
+If the user provides a Vibe Kanban issue ID, fetch it with `mcp__vibe_kanban__get_issue`.
 
 ### 2. Explore the codebase (optional)
 
@@ -49,16 +50,32 @@ Ask the user:
 
 Iterate until the user approves the breakdown.
 
-### 5. Create the GitHub issues
+### 5. Create the Vibe Kanban issues
 
-For each approved slice, create a GitHub issue using `gh issue create`. Use the issue body template below.
+Resolve the Work project once:
 
-Create issues in dependency order (blockers first) so you can reference real issue numbers in the "Blocked by" field.
+1. **List organizations** using `mcp__vibe_kanban__list_organizations` to get the org ID.
+2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID. Find the project named **"Work"** and note its ID.
+
+For each approved slice, in dependency order (blockers first):
+
+3. **Create the issue** using `mcp__vibe_kanban__create_issue`:
+   - `title`: Short, label-style name for the slice (e.g., "Add user auth endpoint", "Wire CSV export UI")
+   - `description`: Use the issue body template below. Replace the PRD reference with the Vibe Kanban issue ID/URL if available, or a short PRD title otherwise.
+   - `project_id`: The Work project ID from step 2
+
+4. **Move the issue to the Implement column** using `mcp__vibe_kanban__update_issue`:
+   - `issue_id`: The issue ID returned from step 3
+   - `status`: `"Implement"`
+
+5. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
+
+Do NOT close or modify the parent PRD issue.
 
 <issue-template>
 ## Parent PRD
 
-#<prd-issue-number>
+<prd-issue-id-or-title>
 
 ## What to build
 
@@ -72,7 +89,7 @@ A concise description of this vertical slice. Describe the end-to-end behavior, 
 
 ## Blocked by
 
-- Blocked by #<issue-number> (if any)
+- Blocked by <issue-id> (if any)
 
 Or "None - can start immediately" if no blockers.
 
@@ -85,4 +102,4 @@ Reference by number from the parent PRD:
 
 </issue-template>
 
-Do NOT close or modify the parent PRD issue.
+Present a summary to the user listing all created issue titles and their Vibe Kanban IDs, grouped by dependency order.
