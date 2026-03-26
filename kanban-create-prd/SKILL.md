@@ -1,6 +1,7 @@
 ---
-name: write-a-prd
-description: Create a PRD through user interview, codebase exploration, and module design, then submit as a GitHub issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
+name: kanban-create-prd
+description: Create a PRD through user interview, codebase exploration, and module design, then submit as a Vibe Kanban issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
+allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, Read, Glob, Grep
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
@@ -17,7 +18,7 @@ A deep module (as opposed to a shallow module) is one which encapsulates a lot o
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
-5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be submitted as a GitHub issue.
+5. Once you have a complete understanding of the problem and solution, use the template below to write the PRD. The PRD should be submitted as a Vibe Kanban issue in the **Work** project under the **PRD** column.
 
 <prd-template>
 
@@ -72,3 +73,21 @@ A description of the things that are out of scope for this PRD.
 Any further notes about the feature.
 
 </prd-template>
+
+### Submitting the PRD to Vibe Kanban
+
+After writing the PRD, create a Vibe Kanban issue in the **Work** project under the **PRD** column:
+
+1. **List organizations** using `mcp__vibe_kanban__list_organizations` to get the org ID.
+2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID. Find the project named **"Work"** and note its ID.
+3. **Create the issue** using `mcp__vibe_kanban__create_issue`:
+   - `title`: A short, label-style title for the feature (e.g., "User auth refactor", "CSV export for reports")
+   - `description`: The full PRD text written above
+   - `project_id`: The Work project ID from step 2
+4. **Move the issue to the PRD column** using `mcp__vibe_kanban__update_issue`:
+   - `issue_id`: The issue ID returned from step 3
+   - `status`: `"PRD"`
+
+Present a summary to the user:
+- The Kanban issue title and ID
+- Confirmation that it was placed in the Work project under the PRD column
