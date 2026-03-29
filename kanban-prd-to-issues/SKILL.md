@@ -78,7 +78,7 @@ For each approved slice, in dependency order (blockers first):
 <issue-template>
 ## Parent PRD
 
-<parent-prd-issue-id>
+<parent-prd-issue-id> - Pull using mcp__vibe_kanban__get_issue
 
 ## What to build
 
