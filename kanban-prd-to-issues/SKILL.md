@@ -1,7 +1,7 @@
 ---
 name: kanban-prd-to-issues
 description: Break a PRD into independently-grabbable Vibe Kanban issues using tracer-bullet vertical slices. Use when user wants to convert a PRD to issues, create implementation tickets, or break down a PRD into work items.
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__create_issue_relationship, Read, Glob, Grep
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__create_issue_relationship, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__list_tags, Read, Glob, Grep
 ---
 
 # PRD to Issues
@@ -73,7 +73,12 @@ For each approved slice, in dependency order (blockers first):
    - `issue_id`: The issue ID returned from step 3
    - `status`: `"Implement"`
 
-5. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
+5. **Tag the issue** using `mcp__vibe_kanban__add_issue_tag`:
+   - First call `mcp__vibe_kanban__list_tags` (once, before the loop) to get available tag IDs.
+   - Find the tag matching the slice type: `"AFK"` or `"HITL"`.
+   - Call `mcp__vibe_kanban__add_issue_tag` with `issue_id` and the matching tag ID.
+
+6. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
 
 <issue-template>
 ## Parent PRD
