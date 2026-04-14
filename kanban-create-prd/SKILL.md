@@ -1,7 +1,7 @@
 ---
 name: kanban-create-prd
 description: Create a PRD through user interview, codebase exploration, and module design, then submit as a Vibe Kanban issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
-allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, Read, Glob, Grep
+allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, Read, Glob, Grep
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
@@ -74,6 +74,16 @@ Any further notes about the feature.
 
 </prd-template>
 
+### Propagate Jira URL from Parent Issue
+
+Before creating the PRD issue, extract the Jira URL from the parent Grill issue:
+
+1. Call `mcp__vibe_kanban__list_sessions` **without** `workspace_id` to get the current session data.
+2. Extract the `issue_id` from the session.
+3. Fetch the parent issue using `mcp__vibe_kanban__get_issue`.
+4. Extract the Jira URL from the parent issue's description — look for the pattern `Jira: (https://\S+)`.
+5. If found, prepend `Jira: <URL>` as the first line of the PRD description (before the Problem Statement heading).
+
 ### Submitting the PRD to Vibe Kanban
 
 After writing the PRD, create a Vibe Kanban issue in the **Work** project under the **PRD** column:
@@ -82,7 +92,7 @@ After writing the PRD, create a Vibe Kanban issue in the **Work** project under 
 2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID. Find the project named **"Work"** and note its ID.
 3. **Create the issue** using `mcp__vibe_kanban__create_issue`:
    - `title`: A short, label-style title for the feature (e.g., "User auth refactor", "CSV export for reports")
-   - `description`: The full PRD text written above
+   - `description`: The full PRD text, with `Jira: <URL>` as the first line if a Jira URL was found in the parent issue.
    - `project_id`: The Work project ID from step 2
 4. **Move the issue to the PRD column** using `mcp__vibe_kanban__update_issue`:
    - `issue_id`: The issue ID returned from step 3

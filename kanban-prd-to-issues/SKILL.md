@@ -20,6 +20,7 @@ Break a PRD into independently-grabbable Vibe Kanban issues using vertical slice
    > This skill can only be triggered from a workspace that is linked to an issue in the **PRD** column. The current issue is in the **"<status>"** column. Please run this skill from a workspace under a PRD issue.
 
 5. If the status is `"PRD"`, use the issue's `description` as the PRD content and its `id` as the parent PRD issue ID.
+6. Extract the Jira URL from the PRD issue's description — look for the pattern `Jira: (https://\S+)`. Store this for propagation into each child issue.
 
 ### 2. Explore the codebase (optional)
 
@@ -81,6 +82,8 @@ For each approved slice, in dependency order (blockers first):
 6. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
 
 <issue-template>
+Jira: <JIRA_URL_FROM_PRD> (include this line ONLY if a Jira URL was extracted from the PRD issue in step 1.6)
+
 ## Parent PRD
 
 <parent-prd-issue-id> (workspaces under this issue can retrieve full PRD details via mcp__vibe_kanban__get_issue)
