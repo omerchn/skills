@@ -24,7 +24,22 @@ Single tick of the AFK agent loop. Run this manually or let the cron invoke it.
 
 ---
 
-## Phase 1: Pick Up New Work
+## Phase 1: Check PR Merges
+
+Run this phase first so that newly-merged blockers are marked "done" before Phase 2 evaluates blocker status.
+
+1. Call `mcp__vibe_kanban__list_issues` with `project_id: "c7185330-ce37-4902-bb66-60d6a69b01b5"`, `status: "Implement"`, `tag_name: "PR"`.
+
+2. For each issue with the "PR" tag:
+   a. Fetch the issue with `mcp__vibe_kanban__get_issue`.
+   b. Extract the PR URL from the description — look for the pattern `PR: (https://\S+)`.
+   c. Parse the PR URL to extract `owner`, `repo`, and `pullNumber` (e.g., from `https://github.com/Orchid-Security/core/pull/456` extract owner=`Orchid-Security`, repo=`core`, pullNumber=`456`).
+   d. Call `mcp__github__pull_request_read` with `method: "get"`, `owner`, `repo`, `pullNumber`.
+   e. If the PR is merged (check the `merged` field in the response):
+      - Add the "done" tag: `mcp__vibe_kanban__add_issue_tag` with `issue_id` and `tag_id: "24bb3bc0-1442-4f51-b2a7-8ff8a09adce0"`.
+      - Remove the "PR" tag: call `mcp__vibe_kanban__list_issue_tags` to find the issue-tag relation ID for the "PR" tag, then call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
+
+## Phase 2: Pick Up New Work
 
 1. Call `mcp__vibe_kanban__list_issues` with `project_id: "c7185330-ce37-4902-bb66-60d6a69b01b5"`, `status: "Implement"`, `tag_name: "AFK"`.
 
@@ -32,7 +47,7 @@ Single tick of the AFK agent loop. Run this manually or let the cron invoke it.
 
 3. Count how many issues currently have the "in progress" tag. Call `mcp__vibe_kanban__list_issues` with `project_id: "c7185330-ce37-4902-bb66-60d6a69b01b5"`, `status: "Implement"`, `tag_name: "in progress"` to get this count. Compute `slots_available = 2 - count`.
 
-4. If `slots_available <= 0`, skip to Phase 2.
+4. If `slots_available <= 0`, skip to Reporting.
 
 5. For each candidate issue (up to `slots_available`):
    a. Fetch full issue details with `mcp__vibe_kanban__get_issue` to check relationships.
@@ -45,19 +60,6 @@ Single tick of the AFK agent loop. Run this manually or let the cron invoke it.
         - `issue_id`: the issue ID
         - `repositories`: `[{"repo_id": "f1819923-d554-4f4b-a344-6607d6912c59", "branch": "main"}]`
         - `prompt`: `/kanban-afk-implement`
-
-## Phase 2: Check PR Merges
-
-1. Call `mcp__vibe_kanban__list_issues` with `project_id: "c7185330-ce37-4902-bb66-60d6a69b01b5"`, `status: "Implement"`, `tag_name: "PR"`.
-
-2. For each issue with the "PR" tag:
-   a. Fetch the issue with `mcp__vibe_kanban__get_issue`.
-   b. Extract the PR URL from the description — look for the pattern `PR: (https://\S+)`.
-   c. Parse the PR URL to extract `owner`, `repo`, and `pullNumber` (e.g., from `https://github.com/Orchid-Security/core/pull/456` extract owner=`Orchid-Security`, repo=`core`, pullNumber=`456`).
-   d. Call `mcp__github__pull_request_read` with `method: "get"`, `owner`, `repo`, `pullNumber`.
-   e. If the PR is merged (check the `merged` field in the response):
-      - Add the "done" tag: `mcp__vibe_kanban__add_issue_tag` with `issue_id` and `tag_id: "24bb3bc0-1442-4f51-b2a7-8ff8a09adce0"`.
-      - Remove the "PR" tag: call `mcp__vibe_kanban__list_issue_tags` to find the issue-tag relation ID for the "PR" tag, then call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
 
 ## Reporting
 
