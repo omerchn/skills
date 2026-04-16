@@ -81,6 +81,13 @@ For each approved slice, in dependency order (blockers first):
 
 6. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
 
+After all issues have been created and linked:
+
+7. **Tag the PRD issue as done** using `mcp__vibe_kanban__add_issue_tag`:
+   - Use the parent PRD issue ID from step 1.
+   - Find the tag named `"done"` from the tags list fetched in step 5.
+   - Call `mcp__vibe_kanban__add_issue_tag` with the PRD `issue_id` and the `"done"` tag ID.
+
 <issue-template>
 Jira: <JIRA_URL_FROM_PRD> (include this line ONLY if a Jira URL was extracted from the PRD issue in step 1.6)
 
