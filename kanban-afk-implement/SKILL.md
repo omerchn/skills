@@ -75,6 +75,14 @@ Capture the **PR URL** from the output.
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
 
+### 8. Start PR Review
+
+Invoke the `/kanban-start-pr-review` skill with the PR URL captured in step 5:
+
+```
+/kanban-start-pr-review <PR_URL>
+```
+
 ## Rules
 
 - **This skill runs autonomously** — do not ask questions or wait for user input.
