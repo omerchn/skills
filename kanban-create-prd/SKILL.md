@@ -1,7 +1,7 @@
 ---
 name: kanban-create-prd
 description: Create a PRD through user interview, codebase exploration, and module design, then submit as a Vibe Kanban issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
-allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, Read, Glob, Grep
+allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__add_issue_tag, Read, Glob, Grep
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
@@ -97,6 +97,9 @@ After writing the PRD, create a Vibe Kanban issue in the **Work** project under 
 4. **Move the issue to the PRD column** using `mcp__vibe_kanban__update_issue`:
    - `issue_id`: The issue ID returned from step 3
    - `status`: `"PRD"`
+5. **Tag the parent Grill issue as done** using `mcp__vibe_kanban__add_issue_tag`:
+   - `issue_id`: The parent Grill `issue_id` from the session (see "Propagate Jira URL from Parent Issue" above)
+   - `tag`: `"done"`
 
 Present a summary to the user:
 - The Kanban issue title and ID
