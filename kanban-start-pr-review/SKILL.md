@@ -63,7 +63,7 @@ If no ticket key can be extracted from the branch name, note this and move on.
 Create a Vibe Kanban issue to track this PR review, then start a workspace that will perform the entire review.
 
 1. **List organizations** using `mcp__vibe_kanban__list_organizations` to get the org ID.
-2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID.
+2. **List projects** using `mcp__vibe_kanban__list_projects` with the org ID, and find the project named `"Reviews"` (case-insensitive). Use its project ID for the issue. If no "Reviews" project exists, stop and ask the user how to proceed.
 3. **Create an issue** using `mcp__vibe_kanban__create_issue`:
    - `title`: `"PR Review: <PR_TITLE> (#<PR_NUMBER>)"`
    - `description`: Include the PR URL, author, branch, and Jira ticket key (if found). Example:
@@ -73,7 +73,7 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
      Repo: <OWNER/REPO>
      Jira: <TICKET_KEY or "N/A">
      ```
-   - `project_id`: Use the project ID from step 2
+   - `project_id`: The ID of the "Reviews" project from step 2
    - `priority`: `"medium"`
 4. **List repos** using `mcp__vibe_kanban__list_repos` to find the matching repo ID. Match the repo name from the GitHub `OWNER/REPO` against the available Vibe Kanban repos (case-insensitive). If no match is found, pick the closest match or use "core" as default.
 5. **Start the review workspace** using `mcp__vibe_kanban__start_workspace`:
