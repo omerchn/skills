@@ -88,6 +88,8 @@ After all issues have been created and linked:
    - Find the tag named `"done"` from the tags list fetched in step 5.
    - Call `mcp__vibe_kanban__add_issue_tag` with the PRD `issue_id` and the `"done"` tag ID.
 
+8. **Run the AFK loop tick** by invoking the `/afk-loop-tick` skill to immediately pick up any unblocked AFK issues that were just created.
+
 <issue-template>
 Jira: <JIRA_URL_FROM_PRD> (include this line ONLY if a Jira URL was extracted from the PRD issue in step 1.6)
 
