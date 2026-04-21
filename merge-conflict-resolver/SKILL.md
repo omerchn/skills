@@ -22,10 +22,10 @@ git status --short
 
 ## Phase 2: Execute Merge
 
-Run the merge and capture output. Default to `main` if the user didn't specify a target branch:
+Run the merge and capture output. Default to `origin/main` if the user didn't specify a target branch:
 
 ```bash
-git merge main
+git merge origin/main
 ```
 
 If the user specified a different branch, use that instead:
