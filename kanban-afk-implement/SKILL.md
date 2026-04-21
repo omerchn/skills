@@ -2,7 +2,7 @@
 name: kanban-afk-implement
 description: AFK implementation skill. Runs inside a workspace, fetches issue and parent context, implements the work, creates a PR, and updates the issue with PR URL and tags.
 user_invocable: false
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
 ---
 
 # AFK Implement
@@ -75,13 +75,17 @@ Capture the **PR URL** from the output.
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
 
-### 8. Start PR Review
+### 8. Start PR Review Workspace
 
-Invoke the `/kanban-start-pr-review` skill with the PR URL captured in step 5:
+Start a new workspace under the **current implement issue** (same `issue_id` from step 1) that will run the review.
 
-```
-/kanban-start-pr-review <PR_URL>
-```
+1. Call `mcp__vibe_kanban__list_repos` to find the matching repo ID for the current repo. If it's the `core` repo, use the `core-worktrees` repo instead.
+2. Call `mcp__vibe_kanban__start_workspace` with:
+   - `name`: `"PR Review #<PR_NUMBER>"`
+   - `executor`: `"CLAUDE_CODE"`
+   - `issue_id`: The `issue_id` of the current implement issue (from step 1)
+   - `repositories`: The matched repo ID with the PR's head branch from remote origin
+   - `prompt`: `/review <PR_URL>`
 
 ## Rules
 
