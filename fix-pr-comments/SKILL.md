@@ -21,14 +21,17 @@ Walk the user through every non-resolved inline review thread on a PR. For each 
 
 - If the user provided a full GitHub PR URL, extract `OWNER/REPO` and `PR_NUMBER`.
 - If the user provided just a number, detect the current repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
-- If no argument was given, auto-detect: `gh pr view --json number,url,headRefName,baseRefName,author`.
-- Capture: `PR_NUMBER`, `PR_URL`, `HEAD_BRANCH`, `BASE_BRANCH`, `PR_AUTHOR_LOGIN`.
+- If no argument was given, auto-detect: `gh pr view --json number,url,headRefName,baseRefName`.
+- Capture: `PR_NUMBER`, `PR_URL`, `HEAD_BRANCH`, `BASE_BRANCH`.
 
 If no PR is resolvable, stop with: *"No PR found for the current branch. Pass a PR number or URL."*
 
 ### 2. Safety check — must be on the PR's head branch
 
-Run `git branch --show-current`. If it does not match `HEAD_BRANCH`, stop and tell the user to switch. Do not checkout for them.
+Run `git branch --show-current`. If it does not match `HEAD_BRANCH`:
+
+- **If the user provided a PR URL or number as an argument:** run `gh pr checkout <PR_NUMBER>` to switch to the PR's head branch. If the checkout fails (e.g., dirty working tree), stop and surface the error.
+- **If no argument was provided** (PR was auto-detected): stop and tell the user to switch. Do not checkout for them.
 
 Uncommitted changes are fine — proceed regardless. The user handles commits manually.
 
@@ -67,9 +70,8 @@ query($owner:String!, $repo:String!, $pr:Int!) {
 Filter the result to threads where ALL of:
 - `isResolved == false`
 - `isOutdated == false`
-- At least one comment is authored by someone other than `PR_AUTHOR_LOGIN` (drop self-only threads — they are PR-author self-notes).
 
-Bot comments (e.g., `github-actions[bot]`, any `*-bot` or `[bot]` login) are kept — do not filter by bot status.
+Do not filter by author. Keep self-review threads (PR author commenting on their own PR) and bot comments (e.g., `github-actions[bot]`, any `*-bot` or `[bot]` login).
 
 If zero threads remain, report *"No unresolved review comments found on PR #N — nothing to do."* and exit. Do not touch CLAUDE.md.
 
@@ -199,8 +201,7 @@ Summarize:
 
 - **Only inline review threads** — skip issue comments and review summary bodies.
 - **Only non-resolved, non-outdated threads.**
-- **Skip threads authored entirely by the PR author** (self-notes).
-- **Include bot comments** — no author filtering beyond self-author.
+- **No author filtering** — include self-review threads and bot comments.
 - **Read the code before recommending** fix / skip / defer.
 - **Fix / Skip → resolve the thread. Defer → leave open.**
 - **Edit first, then reply, then resolve** — never post "Addressed" before the edit.
