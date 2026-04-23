@@ -21,6 +21,7 @@ Break a PRD into independently-grabbable Vibe Kanban issues using vertical slice
 
 5. If the status is `"PRD"`, use the issue's `description` as the PRD content and its `id` as the parent PRD issue ID.
 6. Extract the Jira URL from the PRD issue's description — look for the pattern `Jira: (https://\S+)`. Store this for propagation into each child issue.
+7. Find the parent Grill issue: inspect the PRD issue's relationships for a `related_to` link pointing to an issue in the **Grill** column. If found, store its ID as the parent Grill issue ID. If none is found, proceed without it (the Grill link step below becomes a no-op).
 
 ### 2. Explore the codebase (optional)
 
@@ -81,14 +82,24 @@ For each approved slice, in dependency order (blockers first):
 
 6. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
 
+7. **Link the issue to the parent PRD** using `mcp__vibe_kanban__create_issue_relationship`:
+   - `source_issue_id`: The parent PRD issue ID from step 1
+   - `target_issue_id`: The issue ID returned from step 3
+   - `relationship_type`: `"related_to"`
+
+8. **Link the issue to the parent Grill** (only if a Grill issue ID was found in step 1.7) using `mcp__vibe_kanban__create_issue_relationship`:
+   - `source_issue_id`: The parent Grill issue ID from step 1.7
+   - `target_issue_id`: The issue ID returned from step 3
+   - `relationship_type`: `"related_to"`
+
 After all issues have been created and linked:
 
-7. **Tag the PRD issue as done** using `mcp__vibe_kanban__add_issue_tag`:
+9. **Tag the PRD issue as done** using `mcp__vibe_kanban__add_issue_tag`:
    - Use the parent PRD issue ID from step 1.
    - Find the tag named `"done"` from the tags list fetched in step 5.
    - Call `mcp__vibe_kanban__add_issue_tag` with the PRD `issue_id` and the `"done"` tag ID.
 
-8. **Run the AFK loop tick** by invoking the `/afk-loop-tick` skill to immediately pick up any unblocked AFK issues that were just created.
+10. **Run the AFK loop tick** by invoking the `/afk-loop-tick` skill to immediately pick up any unblocked AFK issues that were just created.
 
 <issue-template>
 Jira: <JIRA_URL_FROM_PRD> (include this line ONLY if a Jira URL was extracted from the PRD issue in step 1.6)

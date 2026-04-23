@@ -1,7 +1,7 @@
 ---
 name: kanban-create-prd
 description: Create a PRD through user interview, codebase exploration, and module design, then submit as a Vibe Kanban issue. Use when user wants to write a PRD, create a product requirements document, or plan a new feature.
-allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__start_workspace, Read, Glob, Grep
+allowed-tools: mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__create_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__create_issue_relationship, mcp__vibe_kanban__start_workspace, Read, Glob, Grep
 ---
 
 This skill will be invoked when the user wants to create a PRD. You may skip steps if you don't consider them necessary.
@@ -97,13 +97,17 @@ After writing the PRD, create a Vibe Kanban issue in the **Work** project under 
 4. **Move the issue to the PRD column** using `mcp__vibe_kanban__update_issue`:
    - `issue_id`: The issue ID returned from step 3
    - `status`: `"PRD"`
-5. **Start a PRD-to-Issues workspace** using `mcp__vibe_kanban__start_workspace`:
+5. **Link the parent Grill issue to the PRD issue** using `mcp__vibe_kanban__create_issue_relationship`:
+   - `source_issue_id`: The parent Grill `issue_id` from the session (see "Propagate Jira URL from Parent Issue" above)
+   - `target_issue_id`: The PRD issue ID from step 3
+   - `relationship_type`: `"related_to"`
+6. **Start a PRD-to-Issues workspace** using `mcp__vibe_kanban__start_workspace`:
    - `name`: `"PRD-to-Issues: <SHORT_TITLE>"` — use the same short title from the Kanban issue
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The PRD issue ID from step 3
    - `repositories`: Use repo ID `f1819923-d554-4f4b-a344-6607d6912c59` (core-worktrees) with branch `"main"`
    - `prompt`: `"/kanban-prd-to-issues"`
-6. **Tag the parent Grill issue as done** using `mcp__vibe_kanban__add_issue_tag`:
+7. **Tag the parent Grill issue as done** using `mcp__vibe_kanban__add_issue_tag`:
    - `issue_id`: The parent Grill `issue_id` from the session (see "Propagate Jira URL from Parent Issue" above)
    - `tag`: `"done"`
 
