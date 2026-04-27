@@ -95,6 +95,10 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
 - **Description:** <JIRA_DESCRIPTION_FIRST_500_CHARS or "N/A">
 - **Acceptance Criteria:** <JIRA_ACCEPTANCE_CRITERIA or "N/A">
 
+## Output Formatting
+
+Number every review comment sequentially (1, 2, 3, ...) so they can be referenced by number in follow-up discussion.
+
 --- END REVIEW PROMPT ---
 
 The `/review` command must always be the **first line** of the prompt. ALWAYS use `/review`, NEVER `/code-review`.
