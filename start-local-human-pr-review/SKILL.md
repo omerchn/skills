@@ -243,12 +243,14 @@ Build the review body:
 
 If `inline_comments` is empty AND `body_chunks` is empty → tell the user *"Nothing to post — all findings dropped."* and skip to step 15.
 
+Before submission, use `AskUserQuestion` to ask whether this should be a **Comment** or **Request changes** review. Use the answer to set `REVIEW_EVENT` to either `COMMENT` or `REQUEST_CHANGES`.
+
 Submit a single review:
 
 ```bash
 gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/reviews \
   --method POST \
-  -f event=COMMENT \
+  -f event=<REVIEW_EVENT> \
   -f body="<REVIEW_BODY>" \
   -f commit_id=<HEAD_SHA> \
   -F 'comments[][path]=<path>' \
@@ -306,7 +308,7 @@ Print:
 - **Medium prettification only** — never invent technical claims.
 - **Edits are verbatim** — no second prettification pass.
 - **Per-comment Post/Edit/Drop** before submission.
-- **Single review with `event=COMMENT`** (or `APPROVE` for the zero-comments path) — never post N individual inline comments.
+- **Single review with `event=COMMENT` or `event=REQUEST_CHANGES`** (chosen by the user before submission), or `APPROVE` for the zero-comments path — never post N individual inline comments.
 - **Cross-cutting comments → top-level body**, never silently dropped.
 - **On submission failure, salvage rather than lose work** — retry transient errors, surface 422 offenders, dump YAML on terminal failure.
 - **Never commit, push, or modify code** — this skill only reads code and posts a review.
