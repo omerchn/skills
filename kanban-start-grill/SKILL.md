@@ -31,7 +31,7 @@ Collect:
 Create an issue using `mcp__vibe_kanban__create_issue`:
 - `title`: A short label-style title derived from the Jira issue summary. Strip prefixes like "As a user..." and boil it down to the core topic (e.g., "Table drift monitoring", "Fix payment timeout").
 - `description`: `Jira: <JIRA_ISSUE_URL>` — the exact URL the user provided.
-- `project_id`: `c7185330-ce37-4902-bb66-60d6a69b01b5`
+- `project_id`: `4437f71b-c91e-4bc0-80e5-b9c2a8a2fde9`
 
 Move the issue to the **Grill** column using `mcp__vibe_kanban__update_issue`:
 - `issue_id`: The issue ID returned above

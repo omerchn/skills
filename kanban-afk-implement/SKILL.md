@@ -68,9 +68,9 @@ Capture the **PR URL** from the output.
 
 ### 7. Update Tags
 
-1. Call `mcp__vibe_kanban__list_tags` with project ID `c7185330-ce37-4902-bb66-60d6a69b01b5` to get tag IDs.
+1. Call `mcp__vibe_kanban__list_tags` with project ID `4437f71b-c91e-4bc0-80e5-b9c2a8a2fde9` to get tag IDs.
 2. Add the **"PR"** tag using `mcp__vibe_kanban__add_issue_tag`:
-   - `tag_id`: `b57daa22-1068-44ab-a41f-84793e247af6`
+   - `tag_id`: `f262ef69-e448-4037-9d8c-546008aad167`
 3. Remove the **"in progress"** tag:
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
