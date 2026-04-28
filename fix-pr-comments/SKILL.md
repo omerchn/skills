@@ -154,6 +154,18 @@ Order within every branch: **edit first (if applicable), then reply, then resolv
 
 After the last thread, summarize what happened (counts of fixed / skipped / deferred) and propose a CLAUDE.md update — derived only from **fixed** comments. Skipped and deferred comments do not produce rules.
 
+**Only propose rules that are super general rules of thumb for the whole project.** A rule earns its place in CLAUDE.md only if it would apply to most future work in this repo, not just this PR or this file. Most fixed comments will NOT produce a rule — that's expected. It is completely fine (and common) for this step to produce zero bullets.
+
+Filter aggressively. A rule belongs only if ALL of:
+- It generalizes beyond the specific file, function, or feature touched in this PR.
+- A new contributor would benefit from knowing it before writing code anywhere in the repo.
+- It is not already obvious from the code, types, linter, or existing CLAUDE.md.
+- It is not a one-off bug fix, naming nit, or local refactor.
+
+Reject anything that reads like "in file X, do Y" or "for feature Z, remember W". Those are not project-wide rules of thumb.
+
+If nothing meets the bar, say so explicitly: *"No project-wide rules emerged from these fixes — skipping CLAUDE.md update."* and stop. Do not pad with weak rules to feel productive.
+
 #### 6a. Pick the target file
 
 Check in this priority order:
@@ -169,12 +181,19 @@ Always state the target path in the proposal.
 - <rule, imperative>. **Why:** <reason>. (from <PR_URL>)
 ```
 
-Example:
+Good example (project-wide rule of thumb):
 ```
-- Never use `any` in shared types — export a concrete interface. **Why:** reviewer flagged that `any` in `src/types/user.ts` leaked into 12 call sites. (from https://github.com/org/repo/pull/1234)
+- Never use `any` in shared types — export a concrete interface. **Why:** untyped shared contracts leak across the codebase and erode type safety everywhere they're consumed. (from https://github.com/org/repo/pull/1234)
 ```
 
-Only include rules that are concrete and actionable. Skip generic platitudes.
+Bad examples (too narrow — do NOT propose these):
+```
+- Rename `getUserData` to `fetchUserProfile` in `src/api/user.ts`.
+- Add a null check in the checkout flow's payment handler.
+- Use `useMemo` around the filter list in `OrdersTable.tsx`.
+```
+
+Each of those is a one-off fix, not a rule of thumb. The fix is already in the code; it does not need to be repeated in CLAUDE.md.
 
 #### 6c. Present as plain bullets
 
@@ -207,4 +226,5 @@ Summarize:
 - **Edit first, then reply, then resolve** — never post "Addressed" before the edit.
 - **Never commit or push** — the user handles that manually.
 - **Only fixed comments feed the CLAUDE.md proposal.**
+- **CLAUDE.md rules must be project-wide rules of thumb** — never PR-specific, file-specific, or feature-specific. Producing zero rules is a valid outcome.
 - **Always show the CLAUDE.md target path and wait for approval before writing.**
