@@ -1,13 +1,13 @@
 ---
 name: fix-review-comments
-description: Use when asked to fix review comments, address feedback, or go through a list of comments the user provides directly (pasted, from a file, or inline). Walks through each comment with the user (fix / skip / defer), applies fixes locally, and proposes a CLAUDE.md update capturing the lessons. Does not touch GitHub or any PR system.
+description: Use when asked to fix review comments, address feedback, or go through a list of comments the user provides directly (pasted, from a file, or inline). Walks through each comment with the user (fix / skip / defer) and applies fixes locally. Does not touch GitHub or any PR system.
 user_invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
 ---
 
 # Fix Review Comments
 
-Walk the user through a list of review comments they provide directly. For each comment, decide together whether to fix / skip / defer, align on the fix, and apply it locally. At the end, propose a CLAUDE.md update capturing lessons from the fixed comments.
+Walk the user through a list of review comments they provide directly. For each comment, decide together whether to fix / skip / defer, align on the fix, and apply it locally.
 
 This skill has **no GitHub integration** — it never fetches, replies, or resolves anything remotely. Comments come from the user, fixes stay local.
 
@@ -79,8 +79,7 @@ Ask via `AskUserQuestion` with three options, with your recommendation stated up
 1. Propose a concrete approach in prose, with your recommendation. Wait for the user to agree or adjust.
 2. Apply the change using `Edit` (or `Write` for new files). Multi-file fixes are fine — execute whatever scope was agreed.
 3. If mid-fix the scope turns out larger than agreed, pause and re-align before continuing.
-4. Record this fix in your session ledger for the CLAUDE.md step. Capture: the rule learned and the why.
-5. Mark the task `completed`.
+4. Mark the task `completed`.
 
 **Skip branch:**
 1. Note briefly why (one sentence, for the final report).
@@ -90,51 +89,12 @@ Ask via `AskUserQuestion` with three options, with your recommendation stated up
 1. Note briefly what's being deferred (one line, for the final report).
 2. Mark the task `completed`.
 
-### 5. Propose CLAUDE.md update
-
-After the last thread, summarize what happened (counts of fixed / skipped / deferred) and propose a CLAUDE.md update — derived only from **fixed** comments. Skipped and deferred comments do not produce rules.
-
-#### 5a. Pick the target file
-
-Check in this priority order:
-1. `./.claude/CLAUDE.md` — use if exists
-2. `./CLAUDE.md` — use if exists
-3. Neither — create `./.claude/CLAUDE.md`
-
-Always state the target path in the proposal.
-
-#### 5b. Format each rule as
-
-```
-- <rule, imperative>. **Why:** <reason>.
-```
-
-Example:
-```
-- Never use `any` in shared types — export a concrete interface. **Why:** reviewer flagged that `any` in `src/types/user.ts` leaked into 12 call sites.
-```
-
-Only include rules that are concrete and actionable. Skip generic platitudes.
-
-#### 5c. Present as plain bullets
-
-Show the proposed bullets inline in your response (not a diff, not a scratch file). Ask the user: *"Apply to `<target_path>` under a `## Lessons Learned` section?"*
-
-#### 5d. On approval
-
-- If `## Lessons Learned` already exists in the target file, append new bullets under it.
-- Otherwise, append the section to the end of the file.
-- Use `Edit` if the file exists, `Write` if creating it fresh.
-
-If the user rejects or edits the list, apply their version. Never write without explicit approval.
-
-### 6. Final report
+### 5. Final report
 
 Summarize:
 - Counts: fixed / skipped / deferred
 - List of files touched (if any)
 - Brief notes for skipped/deferred items
-- CLAUDE.md action taken (updated / created / skipped)
 - Remind the user: **changes are not committed or pushed** — they handle that manually.
 
 ## Rules
@@ -143,5 +103,3 @@ Summarize:
 - **Read the code before recommending** fix / skip / defer.
 - **Edit only after the user agrees** on the approach.
 - **Never commit or push** — the user handles that manually.
-- **Only fixed comments feed the CLAUDE.md proposal.**
-- **Always show the CLAUDE.md target path and wait for approval before writing.**
