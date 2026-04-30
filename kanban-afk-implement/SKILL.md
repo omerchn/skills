@@ -2,7 +2,7 @@
 name: kanban-afk-implement
 description: AFK implementation skill. Runs inside a workspace, fetches issue and parent context, implements the work, creates a PR, and updates the issue with PR URL and tags.
 user_invocable: false
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
 ---
 
 # AFK Implement
@@ -68,10 +68,13 @@ Capture the **PR URL** from the output.
 
 ### 7. Update Tags
 
-1. Call `mcp__vibe_kanban__list_tags` with project ID `c7185330-ce37-4902-bb66-60d6a69b01b5` to get tag IDs.
-2. Add the **"PR"** tag using `mcp__vibe_kanban__add_issue_tag`:
-   - `tag_id`: `b57daa22-1068-44ab-a41f-84793e247af6`
-3. Remove the **"in progress"** tag:
+1. Resolve the **Work** project:
+   - Call `mcp__vibe_kanban__list_organizations` → org ID
+   - Call `mcp__vibe_kanban__list_projects` with the org ID → find the project named `"Work"` (case-insensitive) and note its ID.
+2. Call `mcp__vibe_kanban__list_tags` with the Work project ID to get tag IDs. Find the tags named `"PR"` and `"in progress"` (case-insensitive).
+3. Add the **"PR"** tag using `mcp__vibe_kanban__add_issue_tag`:
+   - `tag_id`: The ID of the "PR" tag from step 2.
+4. Remove the **"in progress"** tag:
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
 
