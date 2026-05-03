@@ -84,11 +84,11 @@ Start a new workspace under the **current implement issue** (same `issue_id` fro
 
 1. Call `mcp__vibe_kanban__list_repos` to find the matching repo ID for the current repo. If it's the `core` repo, use the `core-worktrees` repo instead.
 2. Call `mcp__vibe_kanban__start_workspace` with:
-   - `name`: `"PR Review #<PR_NUMBER>"`
+   - `name`: `"AI Review & Fix #<PR_NUMBER>"`
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The `issue_id` of the current implement issue (from step 1)
    - `repositories`: The matched repo ID with the PR's head branch from remote origin
-   - `prompt`: `/review <PR_URL>`
+   - `prompt`: `/ai-review-and-fix <PR_URL>`
 
 ## Rules
 
