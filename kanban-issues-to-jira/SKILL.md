@@ -2,7 +2,7 @@
 name: kanban-issues-to-jira
 description: Push every Vibe Kanban slice issue created from a PRD into Jira as a sub-task of the parent Jira ticket. High-level titles and descriptions only — no technical details. Run by a human AFTER /kanban-prd-to-issues has finished, from the same PRD workspace.
 user_invocable: true
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_issues, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__createJiraIssue, mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_issues, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__update_issue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__createJiraIssue, mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata
 ---
 
 # Kanban Issues to Jira
@@ -80,7 +80,9 @@ For each child Kanban issue, in the confirmed order:
 
 4. Capture the returned Jira issue key and URL.
 
-If a sub-task creation fails, report the failure to the user but continue with the remaining issues rather than aborting the batch.
+5. **Write the Jira URL back to the Kanban slice issue.** Call `mcp__vibe_kanban__update_issue` for the child Kanban issue, prepending a `Jira: <URL>` line at the **start** of its description (mirroring how the PRD issue carries its parent Jira link). Preserve the existing description content below it (or update the line in place if one is already present at the top).
+
+If a sub-task creation fails, report the failure to the user but continue with the remaining issues rather than aborting the batch. If the Kanban update fails after a successful Jira creation, flag it but do not retry the Jira creation.
 
 ### 6. Summarize
 
