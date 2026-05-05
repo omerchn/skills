@@ -91,18 +91,6 @@ Capture the **PR URL** from the output.
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
 
-### 8. Start PR Review Workspace
-
-Start a new workspace under the **current implement issue** (same `issue_id` from step 1) that will run the review.
-
-1. Call `mcp__vibe_kanban__list_repos` to find the matching repo ID for the current repo. If it's the `core` repo, use the `core-worktrees` repo instead.
-2. Call `mcp__vibe_kanban__start_workspace` with:
-   - `name`: `"AI Review & Fix #<PR_NUMBER>"`
-   - `executor`: `"CLAUDE_CODE"`
-   - `issue_id`: The `issue_id` of the current implement issue (from step 1)
-   - `repositories`: The matched repo ID with the PR's head branch from remote origin
-   - `prompt`: `/ai-review-and-fix <PR_URL>`
-
 ## Rules
 
 - **This skill runs autonomously** — do not ask questions or wait for user input.
