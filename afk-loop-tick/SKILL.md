@@ -2,7 +2,7 @@
 name: afk-loop-tick
 description: Single tick of the AFK agent loop. Picks up unblocked AFK issues, starts implementation workspaces, and checks PR merges. Invoked by the cron or manually via /afk-loop-tick.
 user_invocable: true
-allowed-tools: mcp__vibe_kanban__list_issues, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__start_workspace, mcp__github__pull_request_read
+allowed-tools: mcp__vibe_kanban__list_issues, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__start_workspace, mcp__github__pull_request_read, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__getTransitionsForJiraIssue, mcp__atlassian__transitionJiraIssue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__getTransitionsForJiraIssue, mcp__claude_ai_Atlassian__transitionJiraIssue
 ---
 
 # AFK Loop Tick
@@ -50,6 +50,15 @@ Run this phase first so that newly-merged blockers are marked "done" before Phas
    e. If the PR is merged (check the `merged` field in the response):
       - Add the "done" tag: `mcp__vibe_kanban__add_issue_tag` with `issue_id` and `tag_id: DONE_TAG_ID`.
       - Remove the "PR" tag: call `mcp__vibe_kanban__list_issue_tags` to find the issue-tag relation ID for the "PR" tag, then call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
+   f. Otherwise, if the PR is open and **no longer a draft** (check that the `draft` field is `false` and `merged` is `false`), transition the linked Jira issue to **"In Review"**:
+      - Extract the Jira URL from the Kanban issue description — look for the pattern `Jira: (https://\S+)`. If none is found, skip this issue.
+      - Parse the Jira issue key from the URL (last path segment, e.g., `CORE-1234`).
+      - Call `getAccessibleAtlassianResources` → cloudId.
+      - Call `getJiraIssue` with the cloudId and Jira key. If the current status name is already `"In Review"` (case-insensitive), skip — no transition needed.
+      - Otherwise, call `getTransitionsForJiraIssue` and find the transition whose target status name is `"In Review"` (case-insensitive). Note its transition ID.
+      - Call `transitionJiraIssue` with the cloudId, Jira key, and transition ID. If the "In Review" transition is not available from the current state, skip silently.
+
+      Use whichever Atlassian MCP prefix is available in the session (`mcp__atlassian__*` or `mcp__claude_ai_Atlassian__*`). The tool names are identical across both prefixes.
 
 ## Phase 2: Pick Up New Work
 
@@ -81,3 +90,4 @@ After both phases, output a brief summary:
 - How many workspaces were started
 - How many PRs were checked
 - How many PRs were merged and marked done
+- How many linked Jira issues were transitioned to "In Review"

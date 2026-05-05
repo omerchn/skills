@@ -2,7 +2,7 @@
 name: kanban-afk-implement
 description: AFK implementation skill. Runs inside a workspace, fetches issue and parent context, implements the work, creates a PR, and updates the issue with PR URL and tags.
 user_invocable: false
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__update_issue, mcp__vibe_kanban__add_issue_tag, mcp__vibe_kanban__remove_issue_tag, mcp__vibe_kanban__list_issue_tags, mcp__vibe_kanban__list_tags, mcp__vibe_kanban__start_workspace, mcp__vibe_kanban__list_repos, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__list_organizations, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getTransitionsForJiraIssue, mcp__atlassian__transitionJiraIssue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getTransitionsForJiraIssue, mcp__claude_ai_Atlassian__transitionJiraIssue, Read, Edit, Write, Glob, Grep, Bash, Agent, Skill
 ---
 
 # AFK Implement
@@ -31,6 +31,19 @@ Extract the Jira URL from the issue description (or parent description if not fo
 From the Jira URL, extract the issue key matching `[A-Z]+-\d+` (e.g., `CORE-1234`).
 
 If no Jira key can be found in either the issue or parent description, use the issue title slugified as the branch name prefix instead.
+
+### 3.5. Transition Jira Issue to "In Progress" (if Jira key found)
+
+If a Jira key was extracted in step 3, transition the Jira issue to **"In Progress"** before starting implementation:
+
+1. Call `getAccessibleAtlassianResources` → cloudId.
+2. Call `getTransitionsForJiraIssue` with the cloudId and Jira issue key to list available transitions.
+3. Find the transition whose target status name is `"In Progress"` (case-insensitive). Note its transition ID.
+4. Call `transitionJiraIssue` with the cloudId, Jira issue key, and the transition ID.
+
+Use whichever Atlassian MCP prefix is available in the session (`mcp__atlassian__*` or `mcp__claude_ai_Atlassian__*`). The tool names are identical across both prefixes.
+
+If no Jira key was found in step 3, or the "In Progress" transition is not available from the current Jira state (e.g., already in that status), skip silently and continue.
 
 ### 4. Implement the Work
 

@@ -2,7 +2,7 @@
 name: kanban-issues-to-jira
 description: Push every Vibe Kanban slice issue created from a PRD into Jira as a sub-task of the parent Jira ticket. High-level titles and descriptions only — no technical details. Run by a human AFTER /kanban-prd-to-issues has finished, from the same PRD workspace.
 user_invocable: true
-allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_issues, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__update_issue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__createJiraIssue, mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata
+allowed-tools: mcp__vibe_kanban__list_sessions, mcp__vibe_kanban__get_issue, mcp__vibe_kanban__list_issues, mcp__vibe_kanban__list_organizations, mcp__vibe_kanban__list_projects, mcp__vibe_kanban__update_issue, mcp__claude_ai_Atlassian__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__createJiraIssue, mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata, mcp__claude_ai_Atlassian__atlassianUserInfo, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__atlassianUserInfo
 ---
 
 # Kanban Issues to Jira
@@ -55,6 +55,7 @@ Do not proceed until the user confirms.
 1. Call `getAccessibleAtlassianResources` → cloud ID.
 2. Call `getJiraIssue` with the cloud ID and the parent issue key to verify it exists.
 3. Call `getJiraProjectIssueTypesMetadata` with the project key and find the sub-task issue type. Prefer the entry with `subtask: true`; otherwise fall back to one whose name is `"Sub-task"` (or `"Subtask"`). Note its exact name.
+4. Call `atlassianUserInfo` to get the current user's `account_id` — this is the assignee for every sub-task created in step 5. If the call fails, stop and tell the user the assignee could not be resolved.
 
 ### 5. Create a Jira sub-task for each confirmed child issue
 
@@ -76,6 +77,7 @@ For each child Kanban issue, in the confirmed order:
    - `issueTypeName`: the sub-task type from step 4.3
    - `summary`: the high-level title
    - `description`: the high-level description
+   - `assignee_account_id`: the account ID from step 4.4 (parameter name may also be `assigneeAccountId` or set via `additionalFields.assignee.accountId` depending on the tool — try the dedicated parameter first, fall back to `additionalFields` if rejected).
    - Parent linkage: set the parent issue key (parameter name depends on the tool — commonly `parentKey`, `parent`, or an additional field on `additionalFields`). If the tool rejects the parameter, re-call with the alternate name; Jira requires the parent be set at creation for sub-task types.
 
 4. Capture the returned Jira issue key and URL.
