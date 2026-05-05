@@ -81,12 +81,14 @@ Capture the **PR URL** from the output.
 
 ### 7. Update Tags
 
+`/kanban-create-pr` always creates a draft PR, so the issue should be tagged `"draft"` (not `"open"`). The `/afk-loop-tick` skill is responsible for syncing `"draft"` → `"open"` when the PR is later marked ready for review.
+
 1. Resolve the **Work** project:
    - Call `mcp__vibe_kanban__list_organizations` → org ID
    - Call `mcp__vibe_kanban__list_projects` with the org ID → find the project named `"Work"` (case-insensitive) and note its ID.
-2. Call `mcp__vibe_kanban__list_tags` with the Work project ID to get tag IDs. Find the tags named `"PR"` and `"in progress"` (case-insensitive).
-3. Add the **"PR"** tag using `mcp__vibe_kanban__add_issue_tag`:
-   - `tag_id`: The ID of the "PR" tag from step 2.
+2. Call `mcp__vibe_kanban__list_tags` with the Work project ID to get tag IDs. Find the tags named `"draft"` and `"in progress"` (case-insensitive).
+3. Add the **"draft"** tag using `mcp__vibe_kanban__add_issue_tag`:
+   - `tag_id`: The ID of the "draft" tag from step 2.
 4. Remove the **"in progress"** tag:
    - Call `mcp__vibe_kanban__list_issue_tags` with the issue ID to find the issue-tag relation ID for the "in progress" tag.
    - Call `mcp__vibe_kanban__remove_issue_tag` with that `issue_tag_id`.
@@ -94,6 +96,6 @@ Capture the **PR URL** from the output.
 ## Rules
 
 - **This skill runs autonomously** — do not ask questions or wait for user input.
-- **Always create the PR before updating tags** — the PR URL must be in the description before adding the "PR" tag.
+- **Always create the PR before updating tags** — the PR URL must be in the description before adding the "draft" tag.
 - **Never push to `main` or `master`** — the `/kanban-create-pr` skill handles branch creation.
-- **If implementation fails** (tests don't pass, can't understand the requirements, etc.), stop and leave the issue as-is with the "in progress" tag. Do NOT add the "PR" tag.
+- **If implementation fails** (tests don't pass, can't understand the requirements, etc.), stop and leave the issue as-is with the "in progress" tag. Do NOT add the "draft" tag.

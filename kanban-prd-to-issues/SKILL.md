@@ -33,6 +33,8 @@ Break the PRD into **tracer bullet** issues. Each issue is a thin vertical slice
 
 Slices may be 'HITL' or 'AFK'. HITL slices require human interaction, such as an architectural decision or a design review. AFK slices can be implemented and merged without human interaction. Prefer AFK over HITL where possible.
 
+AFK is the **default** for issues in the Implement column — only HITL slices need to be explicitly tagged. The `/afk-loop-tick` picker treats any untagged Implement issue as AFK.
+
 <vertical-slice-rules>
 - Each slice delivers a narrow but COMPLETE path through every layer (schema, API, UI, tests)
 - A completed slice is demoable or verifiable on its own
@@ -75,10 +77,10 @@ For each approved slice, in dependency order (blockers first):
    - `issue_id`: The issue ID returned from step 3
    - `status`: `"Implement"`
 
-5. **Tag the issue** using `mcp__vibe_kanban__add_issue_tag`:
+5. **Tag the issue if HITL** using `mcp__vibe_kanban__add_issue_tag`:
    - First call `mcp__vibe_kanban__list_tags` (once, before the loop) to get available tag IDs.
-   - Find the tag matching the slice type: `"AFK"` or `"HITL"`.
-   - Call `mcp__vibe_kanban__add_issue_tag` with `issue_id` and the matching tag ID.
+   - If the slice is **HITL**, find the `"HITL"` tag and call `mcp__vibe_kanban__add_issue_tag` with `issue_id` and the tag ID.
+   - If the slice is **AFK**, do nothing — AFK is the implicit default for untagged Implement issues.
 
 6. **Link blockers** using `mcp__vibe_kanban__create_issue_relationship` for any "blocked by" relationships identified in step 4.
 

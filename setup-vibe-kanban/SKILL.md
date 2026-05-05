@@ -32,12 +32,14 @@ In Review
 Testing In Dev
 Ready For Staging
 Grilled
-AFK
 HITL
 blocked
-PR
+draft
+open
 in progress
 ```
+
+(AFK is implicit — any Implement issue without the `HITL` tag is treated as AFK by `/afk-loop-tick`. The `draft` and `open` tags reflect the current state of the linked PR; they replace the previous single `PR` tag.)
 
 In project **Reviews** (6 tags):
 
@@ -88,7 +90,7 @@ Compute the deltas (expected − actual) for: projects, Work tags, Reviews tags,
 
 ```
 Projects:    ✓ Work    ✗ Reviews
-Work tags:   12/14 present, missing: PR, in progress
+Work tags:   12/14 present, missing: draft, open
 Reviews:     project missing — tags will be checked after creation
 Repos:       4/6 present, missing: helm, snowflake
 Scripts:     core ✓ pnpm install, core-worktrees ✗ (currently null)
