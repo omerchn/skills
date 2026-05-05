@@ -80,7 +80,10 @@ For each child Kanban issue, in the confirmed order:
 
 4. Capture the returned Jira issue key and URL.
 
-5. **Write the Jira URL back to the Kanban slice issue.** Call `mcp__vibe_kanban__update_issue` for the child Kanban issue, prepending a `Jira: <URL>` line at the **start** of its description (mirroring how the PRD issue carries its parent Jira link). Preserve the existing description content below it (or update the line in place if one is already present at the top).
+5. **Write the Jira URL back to the Kanban slice issue.** Call `mcp__vibe_kanban__update_issue` for the child Kanban issue so its description starts with a `Jira: <URL>` line pointing at the newly-created sub-task (mirroring how the PRD issue carries its parent Jira link).
+   - If the description already contains a `Jira: <URL>` line (anywhere in the text), **replace** it with the new one — do not leave both. The new line must end up at the **start** of the description.
+   - If no `Jira:` line exists, **prepend** the new line to the description.
+   - Preserve all other existing description content unchanged.
 
 If a sub-task creation fails, report the failure to the user but continue with the remaining issues rather than aborting the batch. If the Kanban update fails after a successful Jira creation, flag it but do not retry the Jira creation.
 
