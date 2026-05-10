@@ -286,7 +286,50 @@ mutation($threadId:ID!) {
 - **422 / 4xx:** print the response body, surface the offending action, and continue to the next thread. Track failed actions for the final report.
 - **Order within a branch:** post reply first, then resolve / un-resolve. Never resolve before the reply lands.
 
-### 11. Final report
+### 11. Approve the PR if all your threads are resolved
+
+After walking every thread, re-query to check whether all threads you authored on this PR are now resolved:
+
+```bash
+gh api graphql -f query='
+query($owner:String!, $repo:String!, $pr:Int!) {
+  repository(owner:$owner, name:$repo) {
+    pullRequest(number:$pr) {
+      reviewThreads(first:100) {
+        nodes {
+          isResolved
+          comments(first:1) { nodes { author { login } } }
+        }
+      }
+    }
+  }
+}' -F owner=<OWNER> -F repo=<REPO> -F pr=<PR_NUMBER>
+```
+
+Filter to threads where `comments.nodes[0].author.login == ME_LOGIN` (case-insensitive). If any have `isResolved == false`, skip this step entirely (do not prompt).
+
+If all are resolved, check whether you've already approved at the current head SHA:
+
+```bash
+gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/reviews \
+  --jq ".[] | select(.user.login == \"$ME_LOGIN\" and .state == \"APPROVED\" and .commit_id == \"$HEAD_SHA\")"
+```
+
+If output is non-empty, you've already approved at this SHA — skip.
+
+Otherwise, `AskUserQuestion` with two options:
+- **Approve PR** — submit an approving review with body `"All threads resolved — looks good."`.
+- **Skip approval** — finish without approving.
+
+On Approve:
+
+```bash
+gh pr review <PR_NUMBER> --approve --body "All threads resolved — looks good."
+```
+
+Capture `approved = true` on success. On failure, retry once; if still failing, print the error, set `approval_failed = true`, and continue to the final report (do not abort).
+
+### 12. Final report
 
 Maintain counters as you walk:
 - `walked` — total threads visited.
@@ -303,6 +346,7 @@ Also maintain a list `unresolved_threads` of threads where you called the un-res
 Print the final report with:
 - `PR_URL` and number.
 - Only the **non-zero** counters from the list above (zero counts are noise).
+- Approval status: *"Approved PR ✅"* if `approved == true`, *"Approval failed — see error above"* if `approval_failed == true`. Omit the line otherwise.
 - The list of un-resolved threads as `<path>:<line>` bullets, if any. Surface this prominently — GitHub's UI does not make state changes obvious.
 - The list of failed actions, if any.
 - Branch reminder: *"You're on the PR's head branch (`<HEAD_BRANCH>`). Use `git switch -` to return to your previous branch."*
@@ -322,5 +366,8 @@ Print the final report with:
 - **Reply first, then resolve / un-resolve** — never resolve before the reply lands.
 - **Un-resolve any thread the author resolved if you reply with push-back** — keeps the conversation visible.
 - **On per-thread API failure, continue to next thread** — surface in the final report; do not abort the whole skill.
+- **Approve only when every authored thread is resolved** — re-query at the end; if any unresolved, skip the approval prompt entirely.
+- **Don't double-approve** — check for an existing APPROVED review at `HEAD_SHA` before prompting.
+- **Approval is user-gated** — never auto-approve without the AskUserQuestion confirmation.
 - **Stay on the PR branch when done** — do not auto-return.
 - **Never commit, push, or modify code** — this skill only reads code and posts replies.
