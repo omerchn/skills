@@ -80,7 +80,7 @@ Create a Vibe Kanban issue to track this PR review, then start a workspace that 
    - `name`: `"PR Review #<PR_NUMBER>"`
    - `executor`: `"CLAUDE_CODE"`
    - `issue_id`: The issue ID from step 3
-   - `repositories`: Use the matched repo ID with branch - the PRs branch from remote origin. If it's `core` repo - then use the `core-worktrees` repo.
+   - `repositories`: Use the matched repo ID with branch `main`. If it's `core` repo - then use the `core-worktrees` repo. Do NOT use the PR's branch — `/review` operates off the PR URL and checks it out itself, and using a PR branch that hasn't been fetched into the local clone causes Vibe Kanban to reject the request with a 400.
    - `prompt`: Build the prompt using the template below. Replace all `<PLACEHOLDERS>` with actual values. If the Jira ticket was successfully fetched, fill in the Jira section; otherwise use `"N/A"` for those fields.
 
 --- BEGIN REVIEW PROMPT ---
