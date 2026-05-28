@@ -155,7 +155,48 @@ Summarize:
 - PR URL + number
 - Counts: fixed / skipped / deferred
 - List of files touched (if any)
-- Remind the user: **changes are not committed or pushed** — they handle that manually.
+
+### 7. Offer to commit, push, and re-request review
+
+If at least one **Fix** was applied (i.e. there are working-tree changes), ask the user via `AskUserQuestion` whether to:
+
+- Commit and push the fixes, then re-request review from human reviewers
+- Skip — leave the changes uncommitted
+
+**If the user confirms:**
+
+1. Invoke the `/quick-commit-push` skill to stage, commit, and push the changes.
+2. After the push succeeds, re-request review from every **human** reviewer who previously reviewed the PR.
+
+   Fetch past reviewers and filter out bots:
+   ```bash
+   gh api graphql -f query='
+   query($owner:String!, $repo:String!, $pr:Int!) {
+     repository(owner:$owner, name:$repo) {
+       pullRequest(number:$pr) {
+         reviews(first:100) {
+           nodes {
+             author { login __typename }
+           }
+         }
+       }
+     }
+   }' -F owner=<OWNER> -F repo=<REPO> -F pr=<PR_NUMBER>
+   ```
+
+   From the result, collect unique `author.login` values where `__typename == "User"` (excludes `Bot` and `Mannequin`). Also exclude the PR author themselves (`gh pr view <PR_NUMBER> --json author -q .author.login`).
+
+3. Re-request review for each remaining login:
+   ```bash
+   gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/requested_reviewers \
+     -f reviewers[]=<LOGIN1> -f reviewers[]=<LOGIN2> ...
+   ```
+
+4. Report: commit hash, branch pushed, and list of reviewers re-requested.
+
+**If the user declines:** remind them the changes are not committed and they can handle it manually.
+
+If no Fix was applied (nothing in the working tree), skip this step entirely.
 
 ## Rules
 
@@ -165,4 +206,5 @@ Summarize:
 - **Read the code before recommending** fix / skip / defer.
 - **Fix / Skip → resolve the thread. Defer → leave open.**
 - **Edit first, then reply, then resolve** — never post "Addressed" before the edit.
-- **Never commit or push** — the user handles that manually.
+- **Ask before committing** — never commit/push automatically; always confirm via `AskUserQuestion` at the end.
+- **Re-request review from humans only** — filter out bots and the PR author when re-requesting.
