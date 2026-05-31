@@ -116,13 +116,14 @@ git diff --check
 1. A summary of each conflict and how it was resolved
 2. The `git status` output showing staged files
 
-Only after user approval:
+Only after user approval, commit and push (both skipping hooks):
 
 ```bash
-git commit --no-edit
+git commit --no-edit --no-verify
+git push --no-verify
 ```
 
-If the commit fails (e.g., pre-commit hooks), report the failure and help fix it.
+If the commit or push fails, report the failure and help fix it.
 
 ## Resolution Principles
 
