@@ -108,46 +108,25 @@ Ask via `AskUserQuestion` with three options, with your recommendation stated up
 
 #### 5d. Act on the decision
 
+Do **not** reply on GitHub or resolve threads during the walk. Only apply local edits and **record the planned reply + resolution** for each thread, keyed by `THREAD_ID` and `FIRST_COMMENT_DATABASE_ID`. All GitHub side effects happen later, in step 7, after the push.
+
 **Fix branch:**
 1. Propose a concrete approach in prose, with your recommendation. Wait for the user to agree or adjust.
 2. Apply the change using `Edit` (or `Write` for new files). Multi-file fixes are fine — execute whatever scope was agreed.
 3. If mid-fix the scope turns out larger than agreed, pause and re-align before continuing.
-4. Reply on GitHub to the thread:
-   ```bash
-   gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/comments/<FIRST_COMMENT_DATABASE_ID>/replies \
-     -f body="Addressed — <one-line summary of the change>."
-   ```
-5. Resolve the thread via GraphQL mutation:
-   ```bash
-   gh api graphql -f query='
-   mutation($threadId:ID!) {
-     resolveReviewThread(input:{threadId:$threadId}) {
-       thread { id isResolved }
-     }
-   }' -F threadId=<THREAD_ID>
-   ```
-6. Mark the task `completed`.
+4. Record the planned reply (`"Addressed — <one-line summary of the change>."`) and that this thread should be **resolved**.
+5. Mark the task `completed`.
 
 **Skip branch:**
 1. Ask the user briefly: *"Short reason for the reply?"* — one sentence.
-2. Reply on GitHub:
-   ```bash
-   gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/comments/<FIRST_COMMENT_DATABASE_ID>/replies \
-     -f body="Won't fix — <reason>."
-   ```
-3. Resolve the thread (same GraphQL mutation as above).
-4. Mark the task `completed`.
-
-**Defer branch:**
-1. Reply on GitHub:
-   ```bash
-   gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/comments/<FIRST_COMMENT_DATABASE_ID>/replies \
-     -f body="Tracked for follow-up — not addressing in this PR."
-   ```
-2. Do **not** resolve the thread — leave it open.
+2. Record the planned reply (`"Won't fix — <reason>."`) and that this thread should be **resolved**.
 3. Mark the task `completed`.
 
-Order within every branch: **edit first (if applicable), then reply, then resolve.** Never post "Addressed" before the edit is in place.
+**Defer branch:**
+1. Record the planned reply (`"Tracked for follow-up — not addressing in this PR."`) and that this thread should be **left open** (not resolved).
+2. Mark the task `completed`.
+
+Never post "Addressed" before the edit is in place — and since all replies are deferred to step 7, never post any reply before the push has succeeded.
 
 ### 6. Final report
 
@@ -156,17 +135,35 @@ Summarize:
 - Counts: fixed / skipped / deferred
 - List of files touched (if any)
 
-### 7. Offer to commit, push, and re-request review
+### 7. Commit, push, then reply and resolve
+
+All GitHub replies and thread resolutions recorded during the walk happen **here**, only after a successful push.
 
 If at least one **Fix** was applied (i.e. there are working-tree changes), ask the user via `AskUserQuestion` whether to:
 
-- Commit and push the fixes, then re-request review from human reviewers
+- Commit and push the fixes, then post replies, resolve threads, and re-request review from human reviewers
 - Skip — leave the changes uncommitted
 
 **If the user confirms:**
 
 1. Invoke the `/quick-commit-push` skill to stage, commit, and push the changes.
-2. After the push succeeds, re-request review from every **human** reviewer who previously reviewed the PR.
+2. **Only after the push succeeds**, post every recorded reply and resolve every thread marked for resolution:
+   - Reply to each thread:
+     ```bash
+     gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/comments/<FIRST_COMMENT_DATABASE_ID>/replies \
+       -f body="<recorded reply body>"
+     ```
+   - Resolve each thread marked **resolve** (Fix / Skip) via GraphQL mutation; leave **Defer** threads open:
+     ```bash
+     gh api graphql -f query='
+     mutation($threadId:ID!) {
+       resolveReviewThread(input:{threadId:$threadId}) {
+         thread { id isResolved }
+       }
+     }' -F threadId=<THREAD_ID>
+     ```
+   If the push fails, do **not** post any replies or resolve any threads — surface the error and stop.
+3. After replies and resolutions are posted, re-request review from every **human** reviewer who previously reviewed the PR.
 
    Fetch past reviewers and filter out bots:
    ```bash
@@ -186,17 +183,17 @@ If at least one **Fix** was applied (i.e. there are working-tree changes), ask t
 
    From the result, collect unique `author.login` values where `__typename == "User"` (excludes `Bot` and `Mannequin`). Also exclude the PR author themselves (`gh pr view <PR_NUMBER> --json author -q .author.login`).
 
-3. Re-request review for each remaining login:
+4. Re-request review for each remaining login:
    ```bash
    gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/requested_reviewers \
      -f reviewers[]=<LOGIN1> -f reviewers[]=<LOGIN2> ...
    ```
 
-4. Report: commit hash, branch pushed, and list of reviewers re-requested.
+5. Report: commit hash, branch pushed, replies posted / threads resolved, and list of reviewers re-requested.
 
-**If the user declines:** remind them the changes are not committed and they can handle it manually.
+**If the user declines:** remind them the changes are not committed and that no replies were posted or threads resolved — they can handle it manually.
 
-If no Fix was applied (nothing in the working tree), skip this step entirely.
+**If no Fix was applied** (nothing in the working tree, only Skips and/or Defers): there is nothing to push, so skip the commit/push prompt. Still post the recorded Skip/Defer replies and resolve the Skip threads (leave Defer threads open) using the same commands as step 2, then report.
 
 ## Rules
 
@@ -205,6 +202,6 @@ If no Fix was applied (nothing in the working tree), skip this step entirely.
 - **No author filtering** — include self-review threads and bot comments.
 - **Read the code before recommending** fix / skip / defer.
 - **Fix / Skip → resolve the thread. Defer → leave open.**
-- **Edit first, then reply, then resolve** — never post "Addressed" before the edit.
+- **Reply and resolve only after push** — during the walk, only apply edits and record planned replies/resolutions; post all replies and resolve all threads in step 7, after the push succeeds. If the push fails, post nothing. (When there are no fixes to push, post the recorded Skip/Defer replies at the end of the walk.)
 - **Ask before committing** — never commit/push automatically; always confirm via `AskUserQuestion` at the end.
 - **Re-request review from humans only** — filter out bots and the PR author when re-requesting.
