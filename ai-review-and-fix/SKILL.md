@@ -1,25 +1,25 @@
 ---
 name: ai-review-and-fix
-description: Use when asked to AI-review and fix the current PR, run /ai-review-and-fix, or auto-review-and-fix. Runs /review on the current PR, then hands the findings to /fix-review-comments to walk through fix/skip/defer locally.
+description: Use when asked to AI-review and fix the current PR, run /ai-review-and-fix, or auto-review-and-fix. Runs /review on the current PR, then hands the findings to /fix-review-comments to walk through fix/skip/defer locally. Falls back to reviewing local changes (working tree when on main, or branch-vs-main diff otherwise) when no PR exists.
 user_invocable: true
 allowed-tools: Bash(gh *), Bash(git *), Skill, AskUserQuestion, Read
 ---
 
 # AI Review and Fix
 
-Run `/review` on the current PR (auto-detected from the current branch), then hand its findings to `/fix-review-comments` so the user can walk through each one (fix / skip / defer) locally.
+Run `/review` on the current PR (auto-detected from the current branch) — or on local changes when there's no PR — then hand its findings to `/fix-review-comments` so the user can walk through each one (fix / skip / defer) locally.
 
 This skill is a thin orchestrator. It does not post anything to GitHub, does not commit, and does not push. All actual review work happens in `/review`; all fix decisions happen in `/fix-review-comments`.
 
 ## Inputs
 
-- **Optional:** a PR URL or PR number. If omitted, resolve the PR from the current branch.
+- **Optional:** a PR URL or PR number. If omitted, resolve the PR from the current branch; if there's no PR, fall back to reviewing local changes.
 
 ## Steps
 
-### 1. Resolve the PR
+### 1. Resolve what to review
 
-If the user passed a URL or number, use it directly (extract `OWNER/REPO` and `PR_NUMBER` from a URL).
+If the user passed a URL or number, use it directly (extract `OWNER/REPO` and `PR_NUMBER` from a URL) → **PR mode**.
 
 Otherwise, auto-detect the PR for the current branch:
 
@@ -27,24 +27,57 @@ Otherwise, auto-detect the PR for the current branch:
 gh pr view --json number,url,headRefName,title -q '{number,url,headRefName,title}'
 ```
 
-If this fails (no PR for the current branch), stop with:
+- **If a PR is found → PR mode.** Capture `PR_NUMBER`, `PR_URL`, `HEAD_BRANCH`, `PR_TITLE`. Print a one-line summary: `#<PR_NUMBER> <PR_TITLE>` and the URL.
+- **If no PR is found → local mode** (review local changes instead of stopping).
 
-> *"No PR found for the current branch. Push the branch and open a PR first, or pass a PR URL/number explicitly."*
+#### Local mode
 
-Capture: `PR_NUMBER`, `PR_URL`, `HEAD_BRANCH`, `PR_TITLE`.
+Detect the current branch:
 
-Print a one-line summary: `#<PR_NUMBER> <PR_TITLE>` and the URL.
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+- **On `main` (the default branch):** review the working-tree changes — staged, unstaged, and untracked.
+
+  ```bash
+  git status --short
+  git diff HEAD
+  ```
+
+- **On any other branch:** review the diff of this branch against `main`.
+
+  ```bash
+  git diff main...HEAD
+  ```
+
+Capture the diff output as `REVIEW_DIFF` and set `REVIEW_TARGET` to a one-line description of what's being reviewed (e.g. `working-tree changes on main` or `branch <name> vs main`). Print `REVIEW_TARGET`.
+
+If `REVIEW_DIFF` is empty (no changes), stop with:
+
+> *"No PR found, and no local changes to review."*
 
 ### 2. Run `/review`
 
 Invoke the `/review` skill via the `Skill` tool.
 
 `skill`: `review`
-`args`: build by concatenating the PR URL with a skeptical-stance prefix:
+`args`: build by concatenating the review target with the skeptical-stance prefix below.
+
+- **PR mode:** lead with `<PR_URL>`.
+- **Local mode:** lead with an instruction and the captured diff, so `/review` has the changes to review without a PR:
+
+  ```
+  Review the local changes below — there is no PR. Target: <REVIEW_TARGET>.
+
+  ```diff
+  <REVIEW_DIFF>
+  ```
+  ```
+
+Then append the stance block:
 
 ```
-<PR_URL>
-
 ## Reviewer Stance (REQUIRED)
 
 Be **skeptical of the diff**. Assume the author may have:
@@ -70,7 +103,7 @@ Invoke the `/fix-review-comments` skill via the `Skill` tool.
 `args`: `/review`'s full output, prefixed with a header that tells the downstream skill these came from an AI reviewer and must be treated with skepticism:
 
 ```
-Comments from /review on #<PR_NUMBER> (AI-generated — treat with skepticism).
+Comments from /review on <#<PR_NUMBER> in PR mode, or <REVIEW_TARGET> in local mode> (AI-generated — treat with skepticism).
 
 ## Reviewer Stance (REQUIRED)
 
@@ -92,13 +125,13 @@ For each comment, **read the actual code first** and form your own judgment befo
 
 Once `/fix-review-comments` returns, print a one-line summary:
 
-> *"Reviewed PR #<PR_NUMBER> via /review and handed off to /fix-review-comments."*
+> *"Reviewed <PR #<PR_NUMBER> | <REVIEW_TARGET>> via /review and handed off to /fix-review-comments."*
 
 Remind the user: **changes are not committed or pushed** — they handle that manually.
 
 ## Rules
 
-- **Auto-detect the current PR** unless the user passes one explicitly.
+- **Auto-detect the current PR** unless the user passes one explicitly. **No PR → review local changes** (working tree on `main`, else branch-vs-`main` diff); only stop when there are no local changes either.
 - **Never post to GitHub** — this skill is local-only. `/review` produces findings; `/fix-review-comments` applies them.
 - **Reuse `/review` and `/fix-review-comments` as-is** — never inline their logic.
 - **Do not impose structured output on `/review`** — pass its natural output through to `/fix-review-comments`, which already handles loose formats.
