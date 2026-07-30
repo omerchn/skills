@@ -1,0 +1,257 @@
+<!--
+  DESIGN BRIEF TEMPLATE — fill the marked regions; keep the style block and the
+  Mermaid init directive VERBATIM. Publish this file with the Artifact tool: it
+  supplies the outer HTML document and renders the mermaid code block natively —
+  so do NOT add doctype / html / head / body tags of your own.
+-->
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0f19;
+    --bg-2: #0e1522;
+    --panel: #121a29;
+    --panel-2: #0f1728;
+    --line: #22304a;
+    --line-soft: #1a2438;
+    --ink: #e2e9f4;
+    --ink-dim: #8593a8;
+    --ink-faint: #5d6b82;
+    --blue: #5b9dff;
+    --violet: #b98bff;
+    --green: #7ef0c8;
+    --amber: #f5b544;
+    --danger: #ff8088;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 520px at 82% -8%, #16223c 0%, rgba(22,34,60,0) 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .brief { max-width: 1160px; margin: 0 auto; padding: 40px 30px 64px; }
+
+  /* ---------- header ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--blue); font-weight: 600; margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(26px, 3.4vw, 40px); line-height: 1.08; letter-spacing: -0.02em;
+    font-weight: 800; margin: 0 0 16px; text-wrap: balance;
+  }
+  h1 .model { color: var(--violet); }
+  .lead { font-size: 16px; color: var(--ink-dim); max-width: 78ch; margin: 0; }
+  .lead code { color: var(--green); }
+  .rel-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .rel-tags span {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+    border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; background: var(--panel-2);
+  }
+  .rel-tags .new { color: var(--amber); border-color: rgba(245,181,68,.35); }
+
+  /* ---------- panels ---------- */
+  .panel {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--line); border-radius: 16px; margin-top: 28px;
+    overflow: hidden;
+  }
+  .erd { padding: 8px 8px 4px; }
+  .erd .mermaid { text-align: center; overflow-x: auto; }
+  .caption {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+    text-align: center; line-height: 1.6; padding: 4px 20px 16px;
+  }
+  .caption code { color: var(--blue); }
+
+  code, .chip { font-family: var(--mono); }
+  .chip {
+    font-size: .88em; background: #0c1428; border: 1px solid var(--line-soft);
+    color: var(--green); padding: 1px 6px; border-radius: 5px; white-space: nowrap;
+  }
+  .chip.b { color: var(--blue); } .chip.v { color: var(--violet); } .chip.a { color: var(--amber); }
+
+  /* ---------- concepts ---------- */
+  .concepts { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 40px; margin-top: 34px; }
+  .concepts h2 {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--blue); font-weight: 700; margin: 0 0 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  ul.pts { list-style: none; margin: 0; padding: 0; }
+  ul.pts li { position: relative; padding-left: 20px; margin: 12px 0; font-size: 14px; color: var(--ink-dim); line-height: 1.5; }
+  ul.pts li::before {
+    content: ""; position: absolute; left: 2px; top: 8px; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue); box-shadow: 0 0 0 3px rgba(91,157,255,.14);
+  }
+  ul.pts li.warn::before { background: var(--amber); box-shadow: 0 0 0 3px rgba(245,181,68,.14); }
+  ul.pts li b { color: var(--ink); font-weight: 650; }
+
+  /* ---------- worked example ---------- */
+  .example { margin-top: 40px; }
+  .example > .head {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--violet); font-weight: 700; margin-bottom: 16px;
+  }
+  .ex-panel { padding: 20px 22px; }
+  pre.tree {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: #c6d3e8; margin: 0 0 6px;
+    overflow-x: auto; white-space: pre;
+  }
+  pre.tree .g { color: var(--green); } pre.tree .b { color: var(--blue); } pre.tree .d { color: var(--ink-faint); } pre.tree .v { color: var(--violet); }
+
+  .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; margin-top: 18px; }
+  .tables .full { grid-column: 1 / -1; }
+  .tbl-title { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); margin: 0 0 6px; }
+  .tbl-title b { color: var(--ink); }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .tbl-wrap { border: 1px solid var(--line-soft); border-radius: 9px; overflow: hidden; overflow-x: auto; background: #0c1322; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  th { color: var(--blue); font-weight: 600; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; background: #0e1728; }
+  td { color: var(--ink-dim); } td b { color: var(--ink); }
+  td.null { color: var(--ink-faint); }
+  tr:last-child td { border-bottom: none; }
+
+  .notes { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+  .notes .n { padding-left: 16px; position: relative; }
+  .notes .n::before { content: "→"; position: absolute; left: 0; color: var(--blue); }
+  .notes .n b { color: var(--ink); font-weight: 650; }
+
+  /* ---------- footer ---------- */
+  .foot { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--ink-faint); line-height: 1.6; }
+  .foot b { color: var(--ink-dim); font-weight: 650; }
+  .foot .open b { color: var(--amber); }
+
+  @media (max-width: 760px) {
+    .concepts, .tables { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="brief">
+
+  <!-- ============ 1 · HEADER ============ -->
+  <header>
+    <div class="eyebrow">TICKET-ID · Design Brief</div>
+    <!-- h1: the change in a phrase; wrap the ONE term that matters in <span class="model"> -->
+    <h1>Short title of the change — <span class="model">the model / term that matters</span></h1>
+    <!-- lead: the thesis in 1–2 sentences. Use <code> for identifiers, <b> for the pivotal word. -->
+    <p class="lead">One or two sentences stating the thesis of the design. Inline <code>identifier</code> chips for the key names; keep it plain and declarative.</p>
+    <!-- rel-tags: 4–6 at-a-glance deltas. Mark the newest/biggest with class="new". -->
+    <div class="rel-tags">
+      <span class="new">new_thing — NEW</span>
+      <span>delta two</span>
+      <span>delta three</span>
+      <span>delta four</span>
+    </div>
+  </header>
+
+  <!-- ============ 2 · DIAGRAM (keep the %%{init}%% directive verbatim) ============ -->
+  <section class="panel erd" aria-label="Entity-relationship diagram">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"darkMode":true,"fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","fontSize":"13px","background":"#0f1728","primaryColor":"#15213a","primaryBorderColor":"#37527f","primaryTextColor":"#e2e9f4","lineColor":"#5b9dff","attributeBackgroundColorOdd":"#111b2e","attributeBackgroundColorEven":"#0e1626"}}}%%
+erDiagram
+    parent ||--o{ child : "relationship label"
+
+    parent {
+        uuid id PK "what this is"
+        uuid organization_id
+    }
+    child {
+        uuid id PK
+        uuid parent_id FK "NEW"
+        string kind "ENUM_A / ENUM_B"
+        string field "nullable — when"
+    }
+</pre>
+  </section>
+  <!-- caption: one mono line reading the diagram left-to-right -->
+  <p class="caption"><code>parent</code> (root) → <code>child</code> · one-line reading of how the pieces relate</p>
+
+  <!-- ============ 3 · CONCEPT GRID — 4 columns, 2×2 ============ -->
+  <!-- pick 4 STABLE dimensions of the design (e.g. Grain / Keys / Linking / Lifecycle). -->
+  <div class="concepts">
+    <section>
+      <h2>Dimension One</h2>
+      <ul class="pts">
+        <li class="warn"><b>Lead claim.</b> Supporting detail with a <span class="chip">chip</span>. Use class="warn" for the newest or riskiest point.</li>
+        <li><b>Claim.</b> Detail; <span class="chip b">blue chip</span> for the pivotal id.</li>
+        <li><b>Claim.</b> Detail.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Dimension Two</h2>
+      <ul class="pts">
+        <li><b>Claim.</b> Detail.</li>
+        <li><b>Claim.</b> Detail.</li>
+        <li class="warn"><b>Open:</b> an unresolved question lives here as a warn bullet.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Dimension Three</h2>
+      <ul class="pts">
+        <li><b>Claim.</b> Detail.</li>
+        <li><b>Claim.</b> Detail.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Dimension Four</h2>
+      <ul class="pts">
+        <li><b>Claim.</b> Detail.</li>
+        <li class="warn"><b>System-wide.</b> Downstream / cross-team impact.</li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- ============ 4 · WORKED EXAMPLE — one concrete entity: tree + before/after tables + notes ============ -->
+  <section class="example">
+    <div class="head">Worked example — concrete-entity (the realistic case)</div>
+    <div class="panel ex-panel">
+<!-- tree: spans .v (violet root) .b (blue node) .d (dim annotation). Align columns with spaces. -->
+<pre class="tree"><span class="v">📁 example</span>          <span class="d">parent  G1  (surrogate)</span>
+ ├── <span class="b">child A</span>       <span class="d">kind = ENUM_A</span>
+ └── <span class="b">child B</span>       <span class="d">kind = ENUM_B</span></pre>
+
+      <div class="tables">
+        <div>
+          <p class="tbl-title"><b>parent</b> — the root row</p>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>ID</th><th>ORG</th></tr></thead>
+            <tbody><tr><td><b>G1</b></td><td>O</td></tr></tbody>
+          </table></div>
+        </div>
+        <div>
+          <p class="tbl-title"><b>child</b> — rows; note the <span class="chip b">FK</span> and the null cell</p>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>ID</th><th>PARENT</th><th>KIND</th></tr></thead>
+            <tbody>
+              <tr><td><b>C1</b></td><td>G1</td><td>ENUM_A</td></tr>
+              <tr><td><b>C2</b></td><td>G1</td><td class="null">–</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- notes: 3–4 "→" lines answering the obvious questions a reviewer asks. -->
+      <div class="notes">
+        <div class="n"><b>How do we read X?</b> the concrete answer from the tables above.</div>
+        <div class="n"><b>Edge / collision case?</b> what happens and why it's safe.</div>
+        <div class="n"><b>Removal / lifecycle?</b> how a row degrades, not deletes.</div>
+        <div class="n"><b>What's deferred?</b> the honest interim behavior before dependency Y lands.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5 · FOOTER ============ -->
+  <div class="foot">
+    <p class="open"><b>Open:</b> unresolved decision one · decision two · decision three.</p>
+    <p><b>Shipped:</b> what is already true, reused, or in production that this builds on.</p>
+  </div>
+
+</div>
