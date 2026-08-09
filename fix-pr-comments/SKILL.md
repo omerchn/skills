@@ -2,7 +2,7 @@
 name: fix-pr-comments
 description: Use when asked to fix PR comments, address review feedback, or go through unresolved review threads. Fetches non-resolved inline review threads on the current PR, walks through each one with the user (fix / skip / defer), applies fixes, and replies on GitHub.
 user_invocable: true
-allowed-tools: Bash(gh *), Bash(git *), Read, Edit, Write, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Bash(gh *), Bash(git *), Read, Edit, Write, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, mcp__claude_ai_Slack__slack_search_users, mcp__claude_ai_Slack__slack_send_message
 ---
 
 # Fix PR Comments
@@ -189,7 +189,15 @@ If at least one **Fix** was applied (i.e. there are working-tree changes), ask t
      -f reviewers[]=<LOGIN1> -f reviewers[]=<LOGIN2> ...
    ```
 
-5. Report: commit hash, branch pushed, replies posted / threads resolved, and list of reviewers re-requested.
+5. Ping each re-requested reviewer on Slack. Find their Slack user with `slack_search_users` (search their GitHub login, then their real name from `gh api users/<LOGIN> -q .name`), then DM them:
+
+   ```
+   :re-re: ? <PR_URL>
+   ```
+
+   Send via `slack_send_message` to the user's DM. If no Slack user matches, say so in the report and move on — don't guess a recipient.
+
+6. Report: commit hash, branch pushed, replies posted / threads resolved, reviewers re-requested, and who was pinged on Slack.
 
 **If the user declines:** remind them the changes are not committed and that no replies were posted or threads resolved — they can handle it manually.
 
@@ -205,3 +213,4 @@ If at least one **Fix** was applied (i.e. there are working-tree changes), ask t
 - **Reply and resolve only after push** — during the walk, only apply edits and record planned replies/resolutions; post all replies and resolve all threads in step 7, after the push succeeds. If the push fails, post nothing. (When there are no fixes to push, post the recorded Skip/Defer replies at the end of the walk.)
 - **Ask before committing** — never commit/push automatically; always confirm via `AskUserQuestion` at the end.
 - **Re-request review from humans only** — filter out bots and the PR author when re-requesting.
+- **Slack ping after re-request** — DM each re-requested reviewer `:re-re: ? <PR_URL>`, nothing else. No Slack message if no reviewer was re-requested.
