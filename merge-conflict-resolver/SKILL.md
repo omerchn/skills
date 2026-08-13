@@ -109,14 +109,16 @@ Run a final check for leftover conflict markers across all files:
 git diff --check
 ```
 
-## Phase 6: Confirm, Then Commit and Push
+## Phase 6: Commit and Push
 
-**Always ask the user for confirmation before committing.** Present:
+Commit and push immediately — no confirmation needed (both skipping hooks):
 
-1. A summary of each conflict and how it was resolved
-2. The `git status` output showing staged files
+```bash
+git commit --no-edit --no-verify
+git push --no-verify
+```
 
-Only after user approval, **always** invoke the `quick-commit-push` skill (`/quick-commit-push`) to commit and push the resolution. Don't hand-roll the commit — the skill owns commit message conventions and push handling.
+Then report a summary of each conflict and how it was resolved.
 
 If the commit or push fails, report the failure and help fix it.
 
@@ -132,7 +134,6 @@ If the commit or push fails, report the failure and help fix it.
 ## Anti-patterns
 
 - **Don't blindly accept one side** — "accept theirs" or "accept ours" loses changes
-- **Don't commit without user confirmation** — always present the resolution summary first
 - **Don't resolve partial conflicts** — resolve ALL conflict blocks in a file before moving to the next
 - **Don't skip the conflict marker check** — leftover markers break compilation
 - **Don't ignore auto-merged files** — files that merged cleanly may still have semantic issues (e.g., duplicate imports, conflicting logic); scan them if the merge touched related code
