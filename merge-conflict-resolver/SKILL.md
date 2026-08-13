@@ -109,19 +109,14 @@ Run a final check for leftover conflict markers across all files:
 git diff --check
 ```
 
-## Phase 6: Confirm Before Committing
+## Phase 6: Confirm, Then Commit and Push
 
 **Always ask the user for confirmation before committing.** Present:
 
 1. A summary of each conflict and how it was resolved
 2. The `git status` output showing staged files
 
-Only after user approval, commit and push (both skipping hooks):
-
-```bash
-git commit --no-edit --no-verify
-git push --no-verify
-```
+Only after user approval, **always** invoke the `quick-commit-push` skill (`/quick-commit-push`) to commit and push the resolution. Don't hand-roll the commit — the skill owns commit message conventions and push handling.
 
 If the commit or push fails, report the failure and help fix it.
 
