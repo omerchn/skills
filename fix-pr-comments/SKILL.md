@@ -137,14 +137,9 @@ Summarize:
 
 ### 7. Commit, push, then reply and resolve
 
-All GitHub replies and thread resolutions recorded during the walk happen **here**, only after a successful push.
+All GitHub replies and thread resolutions recorded during the walk happen **here**, only after a successful push. Do this automatically once every thread has been walked — never ask for confirmation.
 
-If at least one **Fix** was applied (i.e. there are working-tree changes), ask the user via `AskUserQuestion` whether to:
-
-- Commit and push the fixes, then post replies, resolve threads, and re-request review from human reviewers
-- Skip — leave the changes uncommitted
-
-**If the user confirms:**
+If at least one **Fix** was applied (i.e. there are working-tree changes):
 
 1. Invoke the `/quick-commit-push` skill to stage, commit, and push the changes.
 2. **Only after the push succeeds**, post every recorded reply and resolve every thread marked for resolution:
@@ -199,8 +194,6 @@ If at least one **Fix** was applied (i.e. there are working-tree changes), ask t
 
 6. Report: commit hash, branch pushed, replies posted / threads resolved, reviewers re-requested, and who was pinged on Slack.
 
-**If the user declines:** remind them the changes are not committed and that no replies were posted or threads resolved — they can handle it manually.
-
 **If no Fix was applied** (nothing in the working tree, only Skips and/or Defers): there is nothing to push, so skip the commit/push prompt. Still post the recorded Skip/Defer replies and resolve the Skip threads (leave Defer threads open) using the same commands as step 2, then report.
 
 ## Rules
@@ -211,6 +204,6 @@ If at least one **Fix** was applied (i.e. there are working-tree changes), ask t
 - **Read the code before recommending** fix / skip / defer.
 - **Fix / Skip → resolve the thread. Defer → leave open.**
 - **Reply and resolve only after push** — during the walk, only apply edits and record planned replies/resolutions; post all replies and resolve all threads in step 7, after the push succeeds. If the push fails, post nothing. (When there are no fixes to push, post the recorded Skip/Defer replies at the end of the walk.)
-- **Ask before committing** — never commit/push automatically; always confirm via `AskUserQuestion` at the end.
+- **Never ask to commit** — after the last thread is walked, always commit, push, reply, and resolve without confirmation.
 - **Re-request review from humans only** — filter out bots and the PR author when re-requesting.
 - **Slack ping after re-request** — DM each re-requested reviewer `:re-re: ? <PR_URL>`, nothing else. No Slack message if no reviewer was re-requested.

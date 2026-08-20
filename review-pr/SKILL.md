@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Use when asked to review a PR and post comments, or run /review-pr. Takes a PR URL, sizes up the diff's risk/complexity/impact to recommend an effort level, confirms it with the user, runs the built-in /code-review on that PR, keeps only the "Worth acting on before merge" findings, and lets the user multi-select which ones to post as inline review comments on the PR.
+description: Use when asked to review a PR and post comments, or run /review-pr. Takes a PR URL, sizes up the diff's risk/complexity/impact to recommend an effort level, confirms it with the user, runs the built-in /code-review on that PR at that level, keeps only its blocking (high/medium severity) findings, and lets the user multi-select which ones to post as inline review comments on the PR.
 user_invocable: true
 allowed-tools: Bash(gh *), Bash(git *), Skill, AskUserQuestion, Read
 ---
@@ -32,7 +32,7 @@ gh pr view <PR_NUMBER> --json title,body,files,additions,deletions,changedFiles
 gh pr diff <PR_NUMBER>
 ```
 
-For a large diff, read the `--stat` view first (`gh pr diff <PR_NUMBER> --stat`) and only pull the full diff for the files that matter.
+For a large diff, list the files first (`gh pr diff <PR_NUMBER> --name-only` — `gh pr diff` has no `--stat`) and only pull the full diff for the files that matter.
 
 Judge three things:
 
@@ -64,7 +64,9 @@ The user's pick wins — never override it with your recommendation.
 
 ### 4. Run the review
 
-`Skill` tool, `skill`: `code-review`, `args`: `<PR_URL> <effort>`.
+`Skill` tool, `skill`: `code-review`, `args`: `<effort> <PR_URL>` — **effort first**.
+
+`/code-review` only reads its *first* token as an effort level; anything else there is treated as the target. Passing `<PR_URL> <effort>` silently drops the level and the review falls back to whatever level was last used, with no warning. Confirm the level in the review's own output before trusting it.
 
 **Never pass `--comment` or `--fix`** — this skill posts only what the user selects, and posting happens in step 7.
 
@@ -72,9 +74,14 @@ Capture the full output.
 
 ### 5. Filter to blocking findings
 
-Keep only findings under the **"Worth acting on before merge"** heading. Drop everything under nits / optional / already-fine / lower-confidence sections.
+`/code-review` returns findings ranked most-severe-first. There is **no fixed section heading** to key on — it reports via `ReportFindings` when that tool is available and as ranked prose when it is not, so filter on the findings themselves:
+
+- **Keep** anything the review labels high or medium severity, or marks `CONFIRMED`.
+- **Drop** anything labelled low / nit / optional / style, anything marked `PLAUSIBLE` with hedged wording, and the section listing what the review checked and found correct.
 
 For each kept finding capture: `path`, `line`, `title`, `body` (the finding's explanation, plus its suggested fix if `/code-review` gave one).
+
+Line numbers in the review are not always postable. Before step 7, confirm each `line` is a RIGHT-side line inside the diff — anchor to the nearest added line in the same hunk if it isn't.
 
 Zero kept findings → report *"`/code-review` found nothing worth acting on before merge — nothing to post."* and exit. Do not ask anything.
 
@@ -118,7 +125,7 @@ One line: *"Posted N of M findings as inline comments on #<PR_NUMBER>: <review U
 
 ## Rules
 
-- **Only "Worth acting on before merge" findings** are ever offered. Nits never reach the user.
+- **Only blocking findings** are ever offered. Nits never reach the user.
 - **Only selected findings get posted** — never the whole review, never a summary body.
 - **One review, not N standalone comments.**
 - **Never commit, push, approve, or request changes** — `event` is always `COMMENT`.
