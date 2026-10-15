@@ -46,8 +46,9 @@ Pick the recommendation:
 |---|---|
 | `low` | Small, mechanical, low blast radius — renames, config, copy, generated files, dependency bumps, test-only. |
 | `medium` | Ordinary feature or bugfix, contained to a few files, no risky surface. |
-| `high` | Any of: risky surface touched, non-trivial new logic, shared/core module, wide refactor, weak test coverage. |
-| `max` | Multiple risk factors at once, or a security/data-integrity/migration path where a miss is expensive. |
+| `high` | Any of: risky surface touched, non-trivial new logic, shared/core module, wide refactor, weak test coverage, security/data-integrity/migration paths. |
+
+Never offer or run `max` — too heavy and slow. `high` is the ceiling.
 
 Print two or three lines: what the PR does, and the risk / complexity / impact read that drives the recommendation.
 
@@ -58,7 +59,6 @@ Print two or three lines: what the PR does, and the risk / complexity / impact r
 - **low** — quick pass, only the obvious
 - **medium** — balanced; fewer, high-confidence findings
 - **high** — broader coverage, may include uncertain findings
-- **max** — exhaustive, slowest
 
 The user's pick wins — never override it with your recommendation.
 
