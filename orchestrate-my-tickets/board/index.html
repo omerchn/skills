@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint Board</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #16191d; --col: #1d2125; --card: #262b31; --card-hi: #2e343b; --raised: #323941;
+    --line: #353c44; --line-soft: #2b3138;
+    --text: #e6eaef; --text-2: #b6c0cb; --muted: #8592a0;
+    --accent: #579dff; --accent-soft: rgba(87,157,255,.14);
+    --warn: #f87168; --warn-soft: rgba(248,113,104,.12);
+    --ok: #4bce97; --amber: #f5cd47; --amber-soft: rgba(245,205,71,.10); --violet: #b8acf6; --violet-soft: rgba(159,143,239,.16);
+    --r: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Controls */
+  button { background: var(--raised); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; font: inherit; font-weight: 500; cursor: pointer; transition: background .12s, border-color .12s; }
+  button:hover { background: #3a424b; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary { background: var(--accent); color: #0f1720; border-color: var(--accent); }
+  button.primary:hover { background: #79b1ff; }
+  button.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+  button.ghost:hover { background: var(--raised); }
+  button.danger { color: var(--warn); }
+  button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+
+  /* Header */
+  header { display: flex; gap: 12px; align-items: center; padding: 20px 24px 16px; flex-wrap: wrap; }
+  h1 { font-size: 20px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+  .phase { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--raised); color: var(--text-2); }
+  .phase.planning { background: var(--violet-soft); color: var(--violet); }
+  .phase.running { background: var(--accent-soft); color: var(--accent); }
+  .spacer { flex: 1; }
+  #banner { display: none; background: var(--warn); color: #1d2125; padding: 10px 24px; font-weight: 600; }
+  #hint { margin: 0 24px 14px; padding: 10px 14px; border-radius: var(--r); background: var(--violet-soft); color: var(--text-2); font-size: 13px; }
+  #hint[hidden] { display: none; }
+
+  /* Board */
+  #layout { display: flex; align-items: flex-start; }
+  #board { display: flex; gap: 12px; padding: 0 24px 32px; overflow-x: auto; align-items: flex-start; flex: 1; min-width: 0; }
+
+  /* PR desk sidebar */
+  #desk { width: 330px; flex-shrink: 0; margin: 0 0 32px 24px; background: var(--col); border: 1px solid var(--line-soft); border-radius: 10px; padding: 14px;
+          position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  #desk.collapsed { width: 44px; padding: 10px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #desk.collapsed:hover { background: var(--card); }
+  .rail-label { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--text-2); }
+  .rail-badge { background: var(--warn); color: #1d2125; font-size: 11px; font-weight: 700; border-radius: 999px; min-width: 20px; text-align: center; padding: 1px 6px; }
+  .collapse-btn { padding: 2px 8px; font-size: 14px; line-height: 1; }
+  .desk-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .desk-h h2 { font-size: 15px; margin: 0; flex: 1; }
+  .desk-sec { margin-top: 16px; }
+  .desk-sec h3 { font-size: 10.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; display: flex; gap: 6px; }
+  .paste { display: flex; gap: 6px; }
+  .paste input { flex: 1; min-width: 0; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font: inherit; font-size: 13px; }
+  .inbox-item { background: var(--card); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; cursor: pointer; margin-bottom: 8px; }
+  .inbox-item:hover { background: var(--card-hi); border-color: var(--line); }
+  .inbox-item.fresh { border-color: var(--warn); }
+  .inbox-item.sent { opacity: .5; }
+  .inbox-item .top { display: flex; align-items: center; gap: 8px; }
+  .inbox-item .n { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+  .inbox-item .pr { font-weight: 600; }
+  .inbox-item .sum { font-size: 12.5px; color: var(--text-2); margin-top: 4px; }
+  .desk-line { font-size: 12.5px; color: var(--text-2); padding: 3px 0; }
+  .desk-line .ok { color: var(--ok); } .desk-line .bad { color: var(--warn); }
+  .pick { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .pick input { margin-top: 3px; }
+  .pick .rendered { margin: 6px 0 0; max-height: 200px; }
+  .column { background: var(--col); border-radius: 10px; width: 300px; flex-shrink: 0; border: 1px solid var(--line-soft); }
+  .column.empty { width: auto; min-width: 150px; }
+  .column h2 { white-space: nowrap; }
+  .column h2 { font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; padding: 14px 14px 10px; display: flex; align-items: center; gap: 8px; }
+  .column h2 .n { background: var(--raised); color: var(--text-2); padding: 0 7px; border-radius: 999px; font-size: 11px; }
+  .column.attn { border-color: rgba(248,113,104,.45); }
+  .column.attn h2 { color: var(--warn); }
+  .cards { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 10px; }
+
+  .card { background: var(--card); border-radius: var(--r); padding: 14px; cursor: pointer; border: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 10px; transition: background .12s, border-color .12s; }
+  .card:hover { background: var(--card-hi); border-color: var(--line); }
+  .card.needs { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn) inset; }
+  .card.excluded { opacity: .45; }
+  .card.excluded .summary { text-decoration: line-through; }
+  .needs-badge { align-self: flex-start; background: var(--warn-soft); color: var(--warn); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+  .summary { font-size: 14.5px; font-weight: 550; line-height: 1.45; color: var(--text); }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--raised); color: var(--text-2); white-space: nowrap; }
+  .chip.stage { background: var(--violet-soft); color: var(--violet); }
+  .dot::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
+  .s-working { color: var(--accent); } .s-at_gate { color: var(--warn); } .s-waiting { color: var(--amber); }
+  .s-queued, .s-stopped { color: var(--muted); } .s-done { color: var(--ok); }
+
+  .callout { font-size: 12.5px; color: var(--text-2); background: var(--amber-soft); border-left: 3px solid var(--amber); border-radius: 0 6px 6px 0; padding: 7px 10px; }
+  .callout.bad { background: var(--warn-soft); border-color: var(--warn); }
+  .callout b { display: block; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 650; margin-bottom: 2px; }
+  .status-line { font-size: 12.5px; color: var(--text-2); display: flex; gap: 10px; flex-wrap: wrap; }
+  .pass { color: var(--ok); } .fail { color: var(--warn); } .pending { color: var(--amber); }
+
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); padding-top: 10px; border-top: 1px solid var(--line-soft); }
+  .foot .key { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .foot .right { display: flex; gap: 6px; align-items: center; }
+  .pts { background: var(--raised); color: var(--text-2); border-radius: 999px; min-width: 22px; text-align: center; padding: 1px 7px; font-weight: 600; }
+
+  /* Planning controls */
+  .plan { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin: 0 -14px -14px; background: var(--col); border-top: 1px solid var(--line-soft); border-radius: 0 0 var(--r) var(--r); cursor: default; }
+  .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .plan-label { font-size: 10.5px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+  .seg button { border: 0; background: transparent; color: var(--text-2); padding: 4px 9px; font-size: 12px; border-radius: 5px; }
+  .seg button:hover { background: var(--raised); }
+  .seg button.on { background: var(--raised); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+  .seg button.on.g-dispatch { background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .drop-btn { font-size: 12px; padding: 4px 10px; }
+  .dispatch-btn { align-self: flex-start; font-size: 12.5px; padding: 5px 12px; background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .dispatch-btn:hover { background: rgba(87,157,255,.24); }
+  .drop-btn.on { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+
+  /* Drawer */
+  #scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .15s; }
+  #scrim.open { opacity: 1; pointer-events: auto; }
+  #drawer { position: fixed; top: 0; right: 0; width: min(620px, 100vw); height: 100vh; background: var(--col); border-left: 1px solid var(--line);
+            overflow-y: auto; padding: 24px 28px 48px; transform: translateX(100%); transition: transform .18s ease; box-shadow: -12px 0 32px rgba(0,0,0,.35); }
+  #drawer.open { transform: none; }
+  .d-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .d-top .key { font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .d-title { font-size: 20px; font-weight: 650; line-height: 1.35; margin: 0 0 4px; letter-spacing: -.01em; }
+  #drawer h3 { margin: 28px 0 10px; font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .item { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px; }
+  .item.sent { opacity: .55; }
+  .item-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .kind { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 4px; }
+  .item-title { font-weight: 600; }
+  .item .target { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .item pre { white-space: pre-wrap; margin: 0 0 12px; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); color: var(--text-2); padding: 12px 14px; border-radius: 6px; max-height: 340px; overflow: auto; border: 1px solid var(--line-soft); }
+  .item textarea { min-height: 160px; margin-bottom: 12px; }
+  .rendered { background: var(--bg); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 16px; margin: 0 0 12px; max-height: 420px; overflow: auto; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+  .rendered > :first-child { margin-top: 0; } .rendered > :last-child { margin-bottom: 0; }
+  .rendered h1, .rendered h2, .rendered h3 { color: var(--text); font-size: 14px; margin: 16px 0 6px; }
+  .rendered strong { color: var(--text); }
+  .rendered p, .rendered ul, .rendered ol { margin: 0 0 10px; }
+  .rendered ul, .rendered ol { padding-left: 20px; }
+  .rendered code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--raised); padding: 1px 5px; border-radius: 4px; }
+  .rendered pre { background: var(--raised); padding: 10px; border-radius: 6px; overflow: auto; }
+  .rendered pre code { background: none; padding: 0; }
+  .rendered table { border-collapse: collapse; width: 100%; margin: 0 0 12px; font-size: 12.5px; }
+  .rendered th, .rendered td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .rendered th { background: var(--raised); color: var(--text); font-weight: 600; }
+  .recommended { background: var(--accent-soft); border: 1px solid rgba(87,157,255,.4); border-radius: 6px; padding: 10px 12px; margin: 10px 0; font-size: 13px; }
+  .recommended b { display: block; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .options { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+  .options button { text-align: left; }
+  .options button.rec { border-color: var(--accent); }
+  .options button .tag { font-size: 11px; color: var(--accent); margin-left: 6px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions .spacer { flex: 1; }
+  .sent-note { font-size: 12.5px; color: var(--muted); font-style: italic; }
+  .activity { list-style: none; margin: 0; padding: 0; }
+  .activity li { position: relative; padding: 0 0 12px 18px; font-size: 13px; color: var(--text-2); }
+  .activity li::before { content: ""; position: absolute; left: 3px; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .activity time { display: block; font-size: 11.5px; color: var(--muted); }
+  .md { white-space: pre-wrap; font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
+  details { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--r); padding: 12px 16px; margin-bottom: 10px; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--text); }
+  details[open] summary { margin-bottom: 10px; }
+  .clamp { max-height: 260px; overflow: auto; }
+  .comment-meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .empty-note { font-size: 13px; color: var(--muted); margin: 0; }
+
+  #toasts { position: fixed; bottom: 20px; left: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--raised); border: 1px solid var(--line); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  dialog { background: var(--raised); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 20px; width: min(440px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog input[type=text] { width: 100%; box-sizing: border-box; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; margin: 8px 0 14px; }
+  dialog label.check { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 16px; color: var(--text-2); }
+</style>
+</head>
+<body>
+<dialog id="park"><form method="dialog">
+  <h3 id="park-title" style="margin-top:0"></h3>
+  <p style="color:var(--text-2);margin:0">Stops the agent if one is running (its worktree is kept) and moves the card to waiting.</p>
+  <input type="text" id="park-note" placeholder="Waiting on what?" required>
+  <label class="check" id="park-clear-row"><input type="checkbox" id="park-clear"><span id="park-clear-text"></span></label>
+  <div class="actions"><button value="cancel" formnovalidate>Cancel</button><button value="ok" class="primary">Park</button></div>
+</form></dialog>
+<div id="banner">Board server unreachable. Approvals fall back to the terminal.</div>
+<header>
+  <h1 id="title">Sprint Board</h1>
+  <span class="phase" id="phase"></span>
+  <button id="needsMe" class="ghost" aria-pressed="false">Needs me</button>  <span class="spacer"></span>
+  <button id="notify" class="ghost">Enable notifications</button>
+  <button id="promote" class="primary" hidden></button>
+  <button id="dispatch" class="primary" hidden>Dispatch</button>
+</header>
+<div id="hint" hidden>Planning: set each ticket's group, drop what shouldn't run, then press <b>Dispatch</b>. Nothing has been written or started yet.</div>
+<div id="layout"><aside id="desk"></aside><main id="board"></main></div>
+<div id="scrim" onclick="closeDrawer()"></div>
+<aside id="drawer"></aside>
+<div id="toasts"></div>
+<script>
+const TOKEN = new URLSearchParams(location.search).get("t");
+const GROUPS = ["dispatch", "waiting", "promote", "inline"];
+let state = null, raw = "", openKey = null, drawerRaw = "", drawerDirty = false, needsMeOnly = false;
+let plan = null;                       // planning edits, kept local until Dispatch
+const sent = new Set();                // "<KEY>:<item>" decisions sent, awaiting the session
+const dispatched = new Set();          // keys dispatched mid-run, awaiting the session
+let seenNeeds = null;                  // for desktop notifications
+const seenToasts = new Set();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stop = `onclick="event.stopPropagation()"`;
+// Agent drafts are untrusted: always sanitize. Without the CDN, fall back to escaped text.
+const md = s => window.marked && window.DOMPurify
+  ? `<div class="rendered">${DOMPurify.sanitize(marked.parse(String(s ?? "")))}</div>`
+  : `<pre>${esc(s)}</pre>`;
+const findItem = (key, id) => (state.tickets.find(t => t.key === key)?.pending || []).find(i => i.id === id);
+
+async function post(body) {
+  const r = await fetch("/decision", { method: "POST", headers: { "X-Board-Token": TOKEN, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) { alert("Decision rejected: " + await r.text()); return false; }
+  return true;
+}
+
+function needs(t) {
+  return [...(t.pending || []), ...(t.questions || []), ...(t.replies || [])].filter(i => !sent.has(t.key + ":" + i.id));
+}
+
+async function poll() {
+  try {
+    const r = await fetch("/state", { headers: { "X-Board-Token": TOKEN }, cache: "no-store" });
+    const text = await r.text();
+    $("#banner").style.display = "none";
+    if (text === raw) return;
+    const next = JSON.parse(text);     // a half-written file throws; next tick retries
+    raw = text; state = next;
+    render();
+  } catch (e) {
+    if (e instanceof TypeError) $("#banner").style.display = "block";
+  }
+}
+
+function render() {
+  const run = state.run || {};
+  $("#title").textContent = run.title || "Sprint Board";
+  $("#phase").textContent = run.phase || "";
+  $("#phase").className = "phase " + (run.phase || "");
+  const tickets = state.tickets || [];
+  const planning = run.phase === "planning";
+  tickets.forEach(t => { if (t.agent === "working") dispatched.delete(t.key); });  // the session picked it up
+
+  if (planning && !plan) plan = Object.fromEntries(tickets.map(t => [t.key, { group: t.group || "dispatch", excluded: false }]));
+  if (!planning) plan = null;
+  $("#dispatch").hidden = !planning;
+  $("#hint").hidden = !planning;
+  if (planning) {
+    const go = Object.values(plan).filter(p => !p.excluded && p.group === "dispatch").length;
+    $("#dispatch").textContent = `Dispatch ${go} agent${go === 1 ? "" : "s"}`;
+  }
+
+  const promo = (state.promote && state.promote.tickets) || [];
+  $("#promote").hidden = planning || !promo.length;
+  $("#promote").textContent = `Promote ${promo.length}`;
+
+  // Tab title + desktop notifications for new "needs you" items
+  const all = tickets.flatMap(t => needs(t).map(i => ({ key: t.key, id: i.id, text: i.title || i.text || i.kind })))
+    .concat(deskInbox().filter(i => !deskSent.has(i.n)).map(i => ({ key: i.pr, id: "desk" + i.n, text: `${i.kind}: ${i.summary}` })));
+  document.title = (all.length ? `(${all.length}) ` : "") + $("#title").textContent;
+  const ids = new Set(all.map(i => i.key + ":" + i.id));
+  if (seenNeeds && "Notification" in window && Notification.permission === "granted")
+    all.filter(i => !seenNeeds.has(i.key + ":" + i.id)).forEach(i => new Notification(`${i.key}: needs you`, { body: i.text }));
+  seenNeeds = ids;
+
+  for (const t of state.toasts || []) if (!seenToasts.has(t.id)) {
+    seenToasts.add(t.id);
+    const el = document.createElement("div"); el.className = "toast"; el.textContent = t.text;
+    $("#toasts").append(el); setTimeout(() => el.remove(), 6000);
+  }
+
+  const cols = [...(state.columns || [])];
+  for (const t of tickets) if (!cols.includes(t.status)) cols.push(t.status);
+  const shown = needsMeOnly ? tickets.filter(t => needs(t).length) : tickets;
+  $("#board").innerHTML = cols.map(c => {
+    const ts = shown.filter(t => t.status === c);
+    const attn = ts.some(t => needs(t).length);
+    return `<section class="column${attn ? " attn" : ""}${ts.length ? "" : " empty"}"><h2>${esc(c)} <span class="n">${ts.length}</span></h2>
+      <div class="cards">${ts.map(t => card(t, planning)).join("")}</div></section>`;
+  }).join("");
+
+  renderDesk();
+  if (openKey) renderDrawer();
+}
+
+// ---- PR desk ----
+const deskSent = new Set();            // inbox numbers decided, awaiting the session
+const deskPick = {};                   // n -> { itemId: option } for single-choice items
+const deskMulti = {};                  // n -> Set of selected item ids
+const deskSeen = {};                   // n -> Set of item ids already given their default
+const deskNote = {};                   // "n:itemId" -> note text
+let deskRaw = "";
+const deskInbox = () => (state && state.desk && state.desk.inbox) || [];
+
+let deskCollapsed = false;
+try { deskCollapsed = localStorage.getItem("deskCollapsed") === "1"; } catch {}
+
+function setDeskCollapsed(v) {
+  deskCollapsed = v; deskRaw = "";
+  try { localStorage.setItem("deskCollapsed", v ? "1" : ""); } catch {}
+  renderDesk();
+}
+
+function renderDesk() {
+  const d = state.desk;
+  const snap = JSON.stringify(d || null) + [...deskSent].join() + deskCollapsed;
+  if (snap === deskRaw) return;        // keeps the paste box from being wiped by polls
+  deskRaw = snap;
+  const el = $("#desk");
+  el.classList.toggle("collapsed", deskCollapsed);
+  el.onclick = deskCollapsed ? () => setDeskCollapsed(false) : null;
+  if (deskCollapsed) {
+    const open = deskInbox().filter(i => !deskSent.has(i.n)).length;
+    el.title = "Expand PR desk";
+    el.innerHTML = `<span style="color:var(--muted);font-size:14px">›</span>
+      ${open ? `<span class="rail-badge">${open}</span>` : ""}
+      <span class="rail-label">PR desk${d && d.on ? "" : " · off"}</span>`;
+    return;
+  }
+  el.title = "";
+  const collapse = `<button class="ghost collapse-btn" title="Collapse" aria-label="Collapse PR desk" onclick="event.stopPropagation(); setDeskCollapsed(true)">‹</button>`;
+  if (!d || !d.on) {
+    el.innerHTML = `<div class="desk-h"><h2>PR desk</h2><span class="chip">off</span>${collapse}</div>
+      <p class="empty-note" style="margin-bottom:12px">Not running. Starting it watches your PRs for review threads, merge conflicts and PRs to approve.</p>
+      <button class="primary" onclick="deskCmd('desk_start')">Start PR desk</button>`;
+    return;
+  }
+  const inbox = deskInbox();
+  const running = d.running || [], queued = d.queued || [], outcomes = (d.outcomes || []).slice(-10).reverse();
+  el.innerHTML = `
+    <div class="desk-h"><h2>PR desk</h2><span class="chip dot s-working">on</span>
+      <button class="ghost" style="padding:4px 8px;font-size:12px" onclick="deskCmd('desk_stop')">Stop</button>${collapse}</div>
+    <div class="paste"><input id="deskUrl" placeholder="Paste a PR URL to review" onkeydown="if(event.key==='Enter')deskReview()"><button onclick="deskReview()">Review</button></div>
+    <div class="desk-sec"><h3>Inbox <span class="n">${inbox.length}</span></h3>
+      ${inbox.map(i => `<div class="inbox-item${deskSent.has(i.n) ? " sent" : " fresh"}" onclick="openDesk(${Number(i.n)})">
+        <div class="top"><span class="n">${esc(i.n)}</span><span class="pr">${esc(i.pr)}</span><span class="chip">${esc(i.kind)}</span></div>
+        <div class="sum">${deskSent.has(i.n) ? "Sent — waiting for the session" : esc(i.summary)}</div></div>`).join("") || `<p class="empty-note">Nothing needs you.</p>`}
+    </div>
+    <div class="desk-sec"><h3>Agents <span class="n">${running.length} running · ${queued.length} queued</span></h3>
+      ${running.map(a => `<div class="desk-line"><span class="dot s-working"></span>${esc(a.pr)} · ${esc(a.kind)}</div>`).join("")}
+      ${queued.map(a => `<div class="desk-line"><span class="dot s-queued"></span>${esc(a.pr)} · ${esc(a.kind)}</div>`).join("")}
+      ${running.length + queued.length ? "" : `<p class="empty-note">Idle.</p>`}
+    </div>
+    <div class="desk-sec"><h3>Recent</h3>
+      ${outcomes.map(o => `<div class="desk-line"><span class="${o.ok === false ? "bad" : "ok"}">${o.ok === false ? "✗" : "✓"}</span> ${esc(o.text)}</div>`).join("") || `<p class="empty-note">No outcomes yet.</p>`}
+    </div>`;
+}
+
+async function deskCmd(action) {
+  if (action === "desk_stop" && !confirm("Stop the PR desk? Running agents finish; nothing new starts.")) return;
+  if (await post({ action })) toast(action === "desk_start" ? "PR desk start requested" : "PR desk stop requested");
+}
+
+async function deskReview() {
+  const url = $("#deskUrl").value.trim();
+  if (!/^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/.test(url)) { alert("Paste a GitHub PR URL"); return; }
+  if (await post({ action: "desk_review", url })) { $("#deskUrl").value = ""; toast("Review queued: " + url.split("/").slice(-3).join("/")); }
+}
+
+function toast(text) {
+  const el = document.createElement("div"); el.className = "toast"; el.textContent = text;
+  $("#toasts").append(el); setTimeout(() => el.remove(), 5000);
+}
+
+function openDesk(n) { openKey = "desk:" + n; drawerRaw = ""; drawerDirty = false; renderDrawer(); $("#drawer").classList.add("open"); $("#scrim").classList.add("open"); }
+
+function renderDeskDrawer(n) {
+  const it = deskInbox().find(i => i.n === n);
+  if (!it) return closeDrawer();
+  const snap = JSON.stringify(it) + deskSent.has(n) + JSON.stringify(deskPick[n] || {}) + [...(deskMulti[n] || [])].join();
+  if (snap === drawerRaw || drawerDirty) return;
+  drawerRaw = snap;
+  // Items can arrive after the drawer was first opened: default only the ones not seen yet.
+  deskPick[n] = deskPick[n] || {}; deskMulti[n] = deskMulti[n] || new Set(); deskSeen[n] = deskSeen[n] || new Set();
+  for (const x of it.items || []) if (!deskSeen[n].has(x.id)) {
+    deskSeen[n].add(x.id);
+    if (x.options) deskPick[n][x.id] = x.recommended || x.options[0]; else if (x.recommended) deskMulti[n].add(x.id);
+  }
+  const sent = deskSent.has(n);
+  const items = (it.items || []).map(x => {
+    const id = esc(x.id), key = `${n}:${x.id}`;
+    if (!x.options) return `<label class="pick"><input type="checkbox" ${deskMulti[n].has(x.id) ? "checked" : ""} ${sent ? "disabled" : ""}
+        onchange="deskToggle(${n},'${id}',this.checked)"><div><b>${esc(x.label)}</b>${x.recommended ? `<span class="tag" style="font-size:11px;color:var(--accent);margin-left:6px">recommended</span>` : ""}${md(x.text)}</div></label>`;
+    return `<div class="item"><div class="item-head"><span class="kind">${esc(x.label)}</span></div>${md(x.text)}
+      <div class="seg" role="group" style="margin-bottom:8px">${x.options.map(o => `<button class="${deskPick[n][x.id] === o ? "on g-dispatch" : ""}" ${sent ? "disabled" : ""}
+        onclick="deskChoose(${n},'${id}','${esc(o)}')">${esc(o)}${o === x.recommended ? " ★" : ""}</button>`).join("")}</div>
+      <textarea placeholder="Note or your own approach (optional)" style="min-height:56px" ${sent ? "disabled" : ""}
+        oninput="deskNote['${key}']=this.value">${esc(deskNote[key] || "")}</textarea></div>`;
+  }).join("");
+  $("#drawer").innerHTML = `
+    <div class="d-top"><a class="key" href="${esc(it.url)}" target="_blank">${esc(it.pr)}</a><span class="chip">${esc(it.kind)}</span>
+      <span class="chip">inbox ${esc(n)}</span><span class="spacer" style="flex:1"></span>
+      <button class="ghost" onclick="closeDrawer()" aria-label="Close">✕</button></div>
+    <h2 class="d-title">${esc(it.summary)}</h2>
+    ${it.text ? md(it.text) : ""}
+    <h3>${it.items && it.items.some(x => !x.options) ? "Select what to act on" : "Decisions"}</h3>
+    ${items || `<p class="empty-note">No sub-items.</p>`}
+    ${sent ? `<span class="sent-note">Sent — waiting for the session</span>` : `<div class="actions" style="margin-top:12px">
+      <button class="primary" onclick="deskSubmit(${n})">Submit decisions</button>
+      <button onclick="deskSubmit(${n}, true)">Accept all recommended</button>
+      <span class="spacer"></span>
+      <button class="ghost danger" onclick="deskDrop(${n})" title="Abandon this item: nothing is posted and its agent is told to clean up">Drop</button></div>`}`;
+}
+
+function deskChoose(n, id, opt) { deskPick[n][id] = opt; drawerRaw = ""; renderDrawer(); }
+function deskToggle(n, id, on) { on ? deskMulti[n].add(id) : deskMulti[n].delete(id); }
+
+async function deskDrop(n) {
+  const it = deskInbox().find(i => i.n === n);
+  if (!confirm(`Drop ${it.pr} (${it.kind})? Nothing is posted; its agent is told to stop and clean up.`)) return;
+  if (await post({ action: "desk_drop", desk: n })) { deskSent.add(n); drawerRaw = ""; render(); }
+}
+
+async function deskSubmit(n, allRec) {
+  const it = deskInbox().find(i => i.n === n);
+  const body = allRec ? { action: "desk_decide", desk: n, all_rec: true } : {
+    action: "desk_decide", desk: n,
+    answers: Object.fromEntries(Object.entries(deskPick[n] || {}).map(([id, choice]) => [id, { choice, note: (deskNote[`${n}:${id}`] || "").trim() || undefined }])),
+    selected: (it.items || []).some(x => !x.options) ? [...deskMulti[n]] : undefined,
+  };
+  if (await post(body)) { deskSent.add(n); drawerRaw = ""; render(); }
+}
+
+function card(t, planning) {
+  const n = needs(t).length, p = plan && plan[t.key];
+  const group = p ? p.group : t.group;
+  const ci = t.pr ? { pass: "✓ CI", fail: "✗ CI", pending: "… CI" }[t.pr.ci] || "" : "";
+  const status = [
+    t.pr ? `<span>PR <a href="${esc(t.pr.url)}" target="_blank" ${stop}>#${esc(t.pr.number)}</a> <span class="${esc(t.pr.ci)}">${ci}</span></span>` : "",
+    t.verifier ? `<span>Verifier <span class="${t.verifier === "PASS" ? "pass" : "fail"}">${esc(t.verifier)}</span></span>` : "",
+  ].filter(Boolean).join("");
+  return `<div class="card${n ? " needs" : ""}${p && p.excluded ? " excluded" : ""}" onclick="openDrawer('${esc(t.key)}')">
+    ${n ? `<span class="needs-badge">Needs you · ${n}</span>` : ""}
+    <div class="summary">${esc(t.summary)}</div>
+    <div class="chips">
+      ${t.stage ? `<span class="chip stage">${esc(t.stage)}</span>` : ""}
+      ${t.agent ? `<span class="chip dot s-${esc(t.agent)}">${esc(t.agent.replace("_", " "))}</span>` : ""}
+      ${!planning && group && !["dispatch", t.agent].includes(group) ? `<span class="chip">${esc(group)}</span>` : ""}
+    </div>
+    ${t.waitingOn ? `<div class="callout"><b>Waiting on</b>${esc(t.waitingOn)}</div>` : ""}
+    ${t.readiness ? `<div class="callout bad"><b>Not ready</b>${esc(t.readiness)}</div>` : ""}
+    ${status ? `<div class="status-line">${status}</div>` : ""}
+    ${!planning && !["queued", "working", "at_gate"].includes(t.agent) ? (dispatched.has(t.key)
+      ? `<span class="sent-note">Dispatch requested</span>`
+      : `<button class="dispatch-btn" onclick="event.stopPropagation(); dispatchOne('${esc(t.key)}')">Dispatch agent</button>`) : ""}
+    <div class="foot">
+      <span><a class="key" href="${esc(t.url)}" target="_blank" ${stop}>${esc(t.key)}</a> · ${esc(t.type || "")}</span>
+      <span class="right">${t.epic ? `<span class="chip">${esc(t.epic)}</span>` : ""}${t.points != null ? `<span class="pts" title="story points">${esc(t.points)}</span>` : ""}</span>
+    </div>
+    ${planning && p ? planControls(t, p) : ""}
+  </div>`;
+}
+
+function planControls(t, p) {
+  const k = esc(t.key);
+  return `<div class="plan" ${stop}>
+    <div class="plan-row">
+      <div class="seg" role="group" aria-label="Group">
+        ${GROUPS.map(g => `<button class="${g === p.group ? "on g-" + g : ""}" onclick="setPlan('${k}','group','${g}')">${g}</button>`).join("")}
+      </div>
+    </div>
+    <div class="plan-row">
+      ${p.group !== "dispatch" ? `<span class="plan-label">No agent</span>`
+        : (t.deps || []).length ? `<span class="plan-label">Starts after ${esc(t.deps.join(", "))}</span>` : ""}
+      <span class="spacer"></span>
+      <button class="drop-btn${p.excluded ? " on" : ""}" onclick="setPlan('${k}','excluded',${!p.excluded})">${p.excluded ? "Dropped" : "Drop"}</button>
+    </div>
+  </div>`;
+}
+
+function setPlan(key, field, value) { plan[key][field] = value; render(); }
+
+function parkCard(key) {
+  const t = state.tickets.find(x => x.key === key), d = $("#park");
+  const open = needs(t), p = open.filter(i => (t.pending || []).includes(i)).length, q = open.length - p;
+  $("#park-title").textContent = `Park ${key}`;
+  $("#park-note").value = ""; $("#park-clear").checked = false;
+  $("#park-clear-row").hidden = !open.length;
+  $("#park-clear-text").textContent = `Also drop ${p} unposted draft(s) and ${q} open question(s). Anything already posted or pushed stays.`;
+  d.onclose = async () => {
+    if (d.returnValue !== "ok") return;
+    const clear = $("#park-clear").checked && open.length > 0;
+    if (await post({ action: "move_to_waiting", ticket: key, note: $("#park-note").value.trim(), ...(clear ? { clear: true } : {}) })) {
+      if (clear) open.forEach(i => sent.add(key + ":" + i.id));
+      drawerDirty = false; drawerRaw = ""; render();
+    }
+  };
+  d.showModal();
+}
+
+async function redispatchFresh(key) {
+  const t = state.tickets.find(x => x.key === key);
+  const p = (t.pending || []).length, q = (t.questions || []).length;
+  if (!confirm(`Start ${key} over?\n\n• Discards ${p} unposted draft(s) and ${q} open question(s) on this card\n• Clears the card's activity history\n• Stashes uncommitted changes in the ticket's worktree (recoverable, not deleted)\n• Re-reads the ticket from Jira and GitHub (description, comments, links, PRs)\n• Starts a new agent from that read only\n\nAnything already posted or pushed stays as it is.`)) return;
+  if (await post({ action: "dispatch", plan: { [key]: { group: "dispatch", excluded: false, fresh: true } } })) {
+    dispatched.add(key); drawerRaw = ""; render();
+  }
+}
+
+async function dispatchPrompt(key) {
+  const prompt = $(`#dp-${CSS.escape(key)}`).value.trim();
+  if (await post({ action: "dispatch", plan: { [key]: { group: "dispatch", excluded: false, ...(prompt ? { prompt } : {}) } } })) {
+    dispatched.add(key); drawerDirty = false; drawerRaw = ""; render();
+  }
+}
+
+async function followUp(ticket, item) {
+  const body = $(`#fu-${CSS.escape(item)}`).value.trim();
+  if (!body) return;
+  if (await post({ action: "answer", ticket, item, body })) { sent.add(ticket + ":" + item); drawerDirty = false; drawerRaw = ""; render(); }
+}
+
+async function resolveReply(ticket, item) {
+  if (await post({ action: "drop", ticket, item, note: "resolved" })) { sent.add(ticket + ":" + item); drawerDirty = false; drawerRaw = ""; render(); }
+}
+
+async function dispatchOne(key) {
+  if (!confirm(`Dispatch an agent for ${key}?`)) return;
+  if (await post({ action: "dispatch", plan: { [key]: { group: "dispatch", excluded: false } } })) { dispatched.add(key); render(); }
+}
+
+function openDrawer(key) { openKey = key; drawerRaw = ""; drawerDirty = false; renderDrawer(); $("#drawer").classList.add("open"); $("#scrim").classList.add("open"); }
+function closeDrawer() { openKey = null; $("#drawer").classList.remove("open"); $("#scrim").classList.remove("open"); }
+
+function renderDrawer() {
+  if (openKey.startsWith("desk:")) return renderDeskDrawer(Number(openKey.slice(5)));
+  const t = (state.tickets || []).find(x => x.key === openKey);
+  if (!t) return closeDrawer();
+  const snap = JSON.stringify(t) + [...sent].join();
+  if (snap === drawerRaw || drawerDirty) return;   // never clobber text you are typing
+  drawerRaw = snap;
+  const k = esc(t.key);
+  const pending = (t.pending || []).map(i => {
+    const s = sent.has(t.key + ":" + i.id), id = esc(i.id);
+    return `<div class="item${s ? " sent" : ""}">
+      <div class="item-head"><span class="kind">${esc(i.kind)}</span><span class="item-title">${esc(i.title || "")}</span></div>
+      <div class="target">${esc(i.target || "")}</div>
+      <div id="body-${id}">${i.kind === "push" || i.kind === "run" ? `<pre>${esc(i.body || "")}</pre>` : md(i.body)}</div>
+      ${s ? `<span class="sent-note">Sent — waiting for the session</span>` : `<div class="actions">
+        <button class="primary" onclick="decide('${k}','${id}','approve')">Approve</button>
+        ${i.editable !== false && i.kind !== "push" && i.kind !== "run" ? `<button onclick="editItem('${k}','${id}')">Edit &amp; approve</button>` : ""}
+        <button onclick="decide('${k}','${id}','send_back')">Send back…</button>
+        <span class="spacer"></span>
+        <button class="ghost danger" onclick="decide('${k}','${id}','drop')">Drop</button></div>`}
+    </div>`;
+  }).join("") || `<p class="empty-note">Nothing waiting for approval.</p>`;
+  const questions = (t.questions || []).map(q => {
+    const s = sent.has(t.key + ":" + q.id), id = esc(q.id);
+    const opts = q.options || [];
+    const choices = opts.length
+      ? `<div class="options">${opts.map((o, n) => `<button class="${o === q.recommended ? "rec" : ""}" onclick="answer('${k}','${id}',${n})">${esc(o)}${o === q.recommended ? `<span class="tag">recommended</span>` : ""}</button>`).join("")}</div>`
+      : q.recommended ? `<div class="recommended"><b>Recommended</b>${esc(q.recommended)}</div>` : "";
+    return `<div class="item${s ? " sent" : ""}">${md(q.text)}
+      ${q.who ? `<div class="target">Who can answer: ${esc(q.who)}</div>` : ""}
+      ${s ? `<span class="sent-note">Answer sent</span>` : `${choices}
+      <textarea id="ans-${id}" placeholder="${opts.length ? "Or write your own answer…" : "Your answer…"}" oninput="drawerDirty=true" style="min-height:80px"></textarea>
+      <div class="actions">
+        ${!opts.length && q.recommended ? `<button class="primary" onclick="answer('${k}','${id}',-1)">Send recommended</button>` : ""}
+        <button class="${!opts.length && q.recommended ? "" : "primary"}" onclick="answer('${k}','${id}')">Send my answer</button></div>`}</div>`;
+  }).join("");
+  // An agent reply that asks nothing: follow up (goes to the same agent as an answer) or resolve (a drop).
+  const replies = (t.replies || []).map(r => {
+    const s = sent.has(t.key + ":" + r.id), id = esc(r.id);
+    return `<div class="item${s ? " sent" : ""}"><div class="comment-meta">Agent · ${esc(r.ts || "")}</div>${md(r.text)}
+      ${s ? `<span class="sent-note">Sent</span>` : `<textarea id="fu-${id}" placeholder="Follow-up for the agent (optional)" oninput="drawerDirty=true" style="min-height:60px"></textarea>
+      <div class="actions"><button class="primary" onclick="followUp('${k}','${id}')">Send follow-up</button>
+        <button onclick="resolveReply('${k}','${id}')">Resolve</button></div>`}</div>`;
+  }).join("");
+  const idle = !["queued", "working", "at_gate"].includes(t.agent);
+  const activity = (t.activity || []).slice(-8).reverse().map(a => `<li><time>${esc(a.ts)}</time>${esc(a.text)}</li>`).join("");
+  const cardPane = `    ${t.waitingOn ? `<div class="callout" style="margin-top:12px"><b>Waiting on</b>${esc(t.waitingOn)}</div>` : ""}
+    <h3>Pending writes</h3>${pending}
+    ${questions ? `<h3>Questions</h3>${questions}` : ""}
+    ${replies ? `<h3>Agent replies</h3>${replies}` : ""}
+    <h3>Agent</h3>
+    ${activity ? `<ul class="activity">${activity}</ul>` : `<p class="empty-note">No reports yet.</p>`}
+    <div class="actions" style="margin-top:6px">
+      ${t.agent === "working" || t.agent === "at_gate" ? `<button class="danger" onclick="control('${k}','stop_agent')">Stop agent</button>` : ""}
+      ${t.agent === "working" || t.agent === "at_gate" || needs(t).length ? `<button onclick="parkCard('${k}')" title="Stop the agent and move the card to waiting; optionally drop its drafts and questions">Park…</button>` : ""}
+    </div>
+    ${idle && !dispatched.has(t.key) ? `<textarea id="dp-${k}" placeholder="What should the agent do? (optional — empty runs the ticket's next stage)" oninput="drawerDirty=!!this.value" style="min-height:70px;margin-top:10px"></textarea>
+    <div class="actions"><button class="primary" onclick="dispatchPrompt('${k}')">Dispatch agent</button></div>` : ""}
+    <h3>Ticket</h3>
+    ${t.doneWhen ? `<details open><summary>Done when</summary><div class="md clamp">${esc(t.doneWhen)}</div></details>` : ""}
+    <details><summary>Description</summary><div class="md clamp">${esc(t.description || "—")}</div></details>
+    ${(t.comments || []).length ? `<details><summary>Recent comments (${t.comments.length})</summary>` + t.comments.slice().reverse().map(c => `<div style="margin-bottom:14px"><div class="comment-meta">${esc(c.author)} · ${esc(c.ts)}</div><div class="md clamp">${esc(c.body)}</div></div>`).join("") + `</details>` : ""}
+    ${t.agent !== "working" ? `<div class="actions" style="margin-top:24px;padding-top:14px;border-top:1px solid var(--line-soft)">${dispatched.has(t.key) ? `<span class="sent-note">Fresh dispatch requested</span>`
+      : `<button class="ghost" onclick="redispatchFresh('${k}')" title="Discard this card's drafts and questions, re-read the ticket from Jira, start a new agent">Re-dispatch fresh…</button>`}</div>` : ""}`;
+  $("#drawer").innerHTML = `
+    <div class="d-top">
+      <a class="key" href="${esc(t.url)}" target="_blank">${k}</a>
+      <span class="chip">${esc(t.status)}</span>
+      ${t.stage ? `<span class="chip stage">${esc(t.stage)}</span>` : ""}
+      ${t.agent ? `<span class="chip dot s-${esc(t.agent)}">${esc(t.agent.replace("_", " "))}</span>` : ""}
+      <span class="spacer" style="flex:1"></span>
+      <button class="ghost" onclick="closeDrawer()" aria-label="Close">✕</button>
+    </div>
+    <h2 class="d-title">${esc(t.summary)}</h2>
+    ${cardPane}`;
+}
+
+function editItem(key, id) {
+  const pre = $(`#body-${CSS.escape(id)}`);
+  const ta = document.createElement("textarea"); ta.value = findItem(key, id).body || ""; ta.oninput = () => drawerDirty = true;
+  pre.replaceWith(ta); drawerDirty = true; ta.focus();
+  const btn = document.createElement("button"); btn.className = "primary"; btn.textContent = "Approve edited text";
+  btn.onclick = () => decide(key, id, "edit_approve", { body: ta.value });
+  const cancel = document.createElement("button"); cancel.className = "ghost"; cancel.textContent = "Cancel";
+  cancel.onclick = () => { drawerDirty = false; drawerRaw = ""; renderDrawer(); };
+  const actions = ta.nextElementSibling; actions.innerHTML = ""; actions.append(btn, cancel);
+}
+
+async function decide(ticket, item, action, extra = {}) {
+  if (action === "send_back") { const note = prompt("What should the agent change?"); if (!note) return; extra.note = note; }
+  if (action === "drop" && !confirm("Drop this write?")) return;
+  if (await post({ action, ticket, item, ...extra })) { sent.add(ticket + ":" + item); drawerDirty = false; drawerRaw = ""; render(); }
+}
+
+// pick: option index, -1 for the recommended answer, undefined for the textarea.
+async function answer(ticket, item, pick) {
+  const q = (state.tickets.find(t => t.key === ticket)?.questions || []).find(x => x.id === item);
+  const body = pick === undefined ? $(`#ans-${CSS.escape(item)}`).value.trim() : pick < 0 ? q.recommended : q.options[pick];
+  if (!body) return;
+  if (await post({ action: "answer", ticket, item, body })) { sent.add(ticket + ":" + item); drawerDirty = false; drawerRaw = ""; render(); }
+}
+
+async function control(ticket, action) {
+  const extra = {};
+  if (action === "stop_agent" && !confirm(`Stop ${ticket}'s agent? Its worktree is kept.`)) return;
+  if (await post({ action, ticket, ...extra })) { drawerRaw = ""; renderDrawer(); }
+}
+
+$("#dispatch").onclick = async () => {
+  const go = Object.entries(plan).filter(([, p]) => !p.excluded && p.group === "dispatch").length;
+  if (!confirm(`Dispatch ${go} agent(s)?`)) return;
+  if (await post({ action: "dispatch", plan })) { $("#dispatch").disabled = true; $("#dispatch").textContent = "Dispatched"; }
+};
+$("#promote").onclick = async () => {
+  const keys = state.promote.tickets;
+  if (confirm(`Start one promote for ${keys.join(", ")}? The promote skill asks for its own confirmation.`)) await post({ action: "promote", tickets: keys });
+};
+$("#needsMe").onclick = e => { needsMeOnly = !needsMeOnly; e.currentTarget.setAttribute("aria-pressed", needsMeOnly); render(); };
+$("#notify").onclick =() => Notification.requestPermission().then(p => { $("#notify").hidden = p === "granted"; });
+if ("Notification" in window && Notification.permission === "granted") $("#notify").hidden = true;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+// Restore what this viewer already decided, so a reload doesn't show it as pending again.
+fetch("/decided", { headers: { "X-Board-Token": TOKEN } }).then(r => r.ok ? r.json() : null).then(d => {
+  if (!d) return;
+  d.items.forEach(k => sent.add(k)); d.desk.forEach(n => deskSent.add(n));  // dispatches show via the card's agent state
+  raw = ""; deskRaw = ""; drawerRaw = ""; poll();
+}).catch(() => {});
+poll(); setInterval(poll, 2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "run": { "title": "Omer's Sprint Board", "phase": "running" },
+  "columns": ["To Do", "In Progress", "In Review", "Test in Dev", "Deploy to Staging", "Test in Staging", "Deploy to Production", "Test in Production"],
+  "promote": { "tickets": ["CORE-5223"] },
+  "toasts": [{ "id": "t1", "text": "CORE-5099 → In Review (agent: PR opened)" }],
+  "tickets": [
+    {
+      "key": "CORE-5224", "summary": "Backfill entity identifiers onto CONTINUOUS apps", "type": "Task", "status": "In Progress",
+      "url": "https://orchid-security.atlassian.net/browse/CORE-5224", "points": 3, "epic": "Continuous apps",
+      "stage": "implement", "group": "dispatch", "deps": [], "agent": "at_gate",
+      "pr": null, "verifier": "PASS",
+      "pending": [
+        { "id": "p1", "kind": "push", "target": "core · CORE-5224-backfill-entity-ids · 3 commits (abc123..def456)", "body": "abc123 feat: backfill entity identifiers\n…" },
+        { "id": "p2", "kind": "pr", "title": "CORE-5224: backfill entity identifiers", "target": "Orchid-Security/core ← CORE-5224-backfill-entity-ids", "body": "## Summary\n…\n\nticket-verifier: PASS", "editable": true }
+      ],
+      "questions": [{ "id": "q1", "text": "Should the backfill also cover archived apps?", "who": "you" }],
+      "activity": [{ "ts": "10:42", "text": "implemented, 14 tests green; waiting on push approval" }],
+      "doneWhen": "…verbatim from the ticket…", "description": "…", "comments": [{ "author": "Omer", "ts": "2026-10-20", "body": "…" }]
+    },
+    {
+      "key": "CORE-3817", "summary": "Last Login not reflecting recent logins in Sunshine app", "type": "Bug", "status": "To Do",
+      "url": "https://orchid-security.atlassian.net/browse/CORE-3817", "points": 2,
+      "stage": "unblock", "group": "waiting", "agent": "waiting", "waitingOn": "product owner: expected semantics of Last Login",
+      "pending": [], "questions": []
+    }
+  ]
+}
