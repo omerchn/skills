@@ -67,9 +67,7 @@ query($owner:String!, $repo:String!, $pr:Int!) {
 }' -F owner=<OWNER> -F repo=<REPO> -F pr=<PR_NUMBER>
 ```
 
-Filter the result to threads where ALL of:
-- `isResolved == false`
-- `isOutdated == false`
+Filter the result to threads where `isResolved == false`. **Keep outdated threads**: every unresolved thread blocks the merge, outdated or not.
 
 Do not filter by author. Keep self-review threads (PR author commenting on their own PR) and bot comments (e.g., `github-actions[bot]`, any `*-bot` or `[bot]` login).
 
@@ -87,7 +85,7 @@ For each thread, in order:
 
 #### 5a. Read the code first
 
-Use `Read` to look at the referenced file around the commented line. Forming a recommendation without reading the code is noise. Skim enough context to judge whether the comment is correct.
+Use `Read` to look at the referenced file around the commented line. For an outdated thread (`line` is null), find the code from `originalLine` and the comment's context, and check whether the current code already addresses it. If it does, recommend replying with the commit that fixed it and resolving. Forming a recommendation without reading the code is noise. Skim enough context to judge whether the comment is correct.
 
 #### 5b. Present the thread
 
@@ -192,14 +190,22 @@ If at least one **Fix** was applied (i.e. there are working-tree changes):
 
    Send via `slack_send_message` to the user's DM. If no Slack user matches, say so in the report and move on — don't guess a recipient.
 
-6. Report: commit hash, branch pushed, replies posted / threads resolved, reviewers re-requested, and who was pinged on Slack.
+6. Enable squash auto-merge, but only if no thread was deferred (every walked thread is now resolved):
 
-**If no Fix was applied** (nothing in the working tree, only Skips and/or Defers): there is nothing to push, so skip the commit/push prompt. Still post the recorded Skip/Defer replies and resolve the Skip threads (leave Defer threads open) using the same commands as step 2, then report.
+   ```bash
+   gh pr merge <PR_NUMBER> --repo <OWNER>/<REPO> --auto --squash
+   ```
+
+   GitHub merges once required approvals and checks pass. If any thread was deferred, skip this and say why in the report. If the command fails (e.g. auto-merge disabled on the repo), surface the error and continue.
+
+7. Report: commit hash, branch pushed, replies posted / threads resolved, reviewers re-requested, who was pinged on Slack, and whether auto-merge was enabled.
+
+**If no Fix was applied** (nothing in the working tree, only Skips and/or Defers): there is nothing to push, so skip the commit/push prompt. Still post the recorded Skip/Defer replies and resolve the Skip threads (leave Defer threads open) using the same commands as step 2, apply the auto-merge step (step 6), then report.
 
 ## Rules
 
 - **Only inline review threads** — skip issue comments and review summary bodies.
-- **Only non-resolved, non-outdated threads.**
+- **Every non-resolved thread, outdated included.** Unresolved threads block the merge.
 - **No author filtering** — include self-review threads and bot comments.
 - **Read the code before recommending** fix / skip / defer.
 - **Fix / Skip → resolve the thread. Defer → leave open.**
@@ -207,3 +213,4 @@ If at least one **Fix** was applied (i.e. there are working-tree changes):
 - **Never ask to commit** — after the last thread is walked, always commit, push, reply, and resolve without confirmation.
 - **Re-request review from humans only** — filter out bots and the PR author when re-requesting.
 - **Slack ping after re-request** — DM each re-requested reviewer `:re-re: ? <PR_URL>`, nothing else. No Slack message if no reviewer was re-requested.
+- **Auto-merge only when nothing is deferred** — after replies and resolutions, enable `--auto --squash` merge without asking, unless a Defer thread is still open.
